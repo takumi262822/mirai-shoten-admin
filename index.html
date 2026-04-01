@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>未来商店 | ADMIN DASHBOARD</title>
+  <link rel="stylesheet" href="./src/styles/admin.css">
+</head>
+<body>
+  <div id="cursor-glow"></div>
+
+  <div class="admin-topbar">
+    <a href="#" class="admin-topbar-logo">Mirai Admin</a>
+    <button id="themeToggle" class="btn btn-theme" type="button">🌙 ダークモード</button>
+  </div>
+
+  <div class="admin-container">
+    <!-- 統計情報セクション -->
+    <section class="section">
+      <h2>📈 統計情報</h2>
+      <div class="stats-grid" id="statsContainer">
+        <div class="stat-card">
+          <h3>総注文数</h3>
+          <div class="value" id="totalOrders">0</div>
+        </div>
+        <div class="stat-card">
+          <h3>合計売上</h3>
+          <div class="value" id="totalRevenue">¥0</div>
+        </div>
+        <div class="stat-card">
+          <h3>処理中</h3>
+          <div class="value" id="processingCount">0</div>
+        </div>
+        <div class="stat-card">
+          <h3>完了</h3>
+          <div class="value" id="deliveredCount">0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 注文追加フォーム -->
+    <section class="section">
+      <h2>➕ 新規注文追加</h2>
+      <form id="orderForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="customerName">顧客名 *</label>
+            <input type="text" id="customerName" name="customerName" required placeholder="例: 山田太郎">
+          </div>
+          <div class="form-group">
+            <label for="email">メールアドレス *</label>
+            <input type="email" id="email" name="email" required placeholder="例: yamada@example.com">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="productCode">商品コード *</label>
+            <input type="text" id="productCode" name="productCode" required placeholder="例: PROD-001">
+          </div>
+          <div class="form-group">
+            <label for="quantity">数量 *</label>
+            <input type="number" id="quantity" name="quantity" required min="1" max="999" placeholder="例: 2">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="totalPrice">合計金額 *</label>
+            <input type="number" id="totalPrice" name="totalPrice" required min="0" placeholder="例: 5000">
+          </div>
+          <div class="form-group">
+            <label for="status">ステータス *</label>
+            <select id="status" name="status" required>
+              <option value="">選択してください</option>
+              <option value="pending">受付中</option>
+              <option value="processing">処理中</option>
+              <option value="shipped">発送済み</option>
+              <option value="delivered">配達完了</option>
+              <option value="cancelled">キャンセル</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button id="submitOrderButton" type="submit" class="btn">✅ 注文を追加</button>
+          <button id="cancelEditButton" type="button" class="btn btn-secondary is-hidden">編集をキャンセル</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 注文一覧 -->
+    <section class="section">
+      <h2>📋 注文一覧</h2>
+      <div id="orderTableContainer"></div>
+    </section>
+
+    <!-- 顧客情報 -->
+    <section class="section">
+      <h2>👥 顧客情報</h2>
+      <div id="customerTableContainer"></div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>&copy; MIRAI SHOTEN All Rights Reserved.</p>
+  </footer>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

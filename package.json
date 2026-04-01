@@ -1,0 +1,37 @@
+{
+  "name": "mirai-shoten-admin",
+  "version": "1.0.0",
+  "description": "EC注文管理ダッシュボード - ES Modules で実装された管理画面",
+  "type": "module",
+  "main": "index.html",
+  "scripts": {
+    "lint": "eslint src/ --ext .js",
+    "test": "node --test src/**/*.test.js",
+    "test:watch": "node --test --watch src/**/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/takumi262822/mirai-shoten-admin.git"
+  },
+  "author": "Takumi Harada",
+  "date": "2026-04-01",
+  "license": "MIT",
+  "keywords": [
+    "admin",
+    "dashboard",
+    "ec",
+    "order",
+    "management",
+    "crm",
+    "javascript",
+    "es-modules"
+  ],
+  "devDependencies": {
+     "@eslint/js": "^9.0.0",
+     "eslint": "^9.39.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  }
+}
