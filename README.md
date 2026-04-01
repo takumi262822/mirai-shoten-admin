@@ -50,6 +50,12 @@ npm test
 
 CI: `.github/workflows/ci.yml`
 
+### テスト方針
+
+- `src/utils/order-validator.test.js` で入力検証、`src/utils/xss.test.js` で表示安全性、`src/constants/admin-constants.test.js` で定数契約、`src/core/admin-manager.test.js` で旧データ互換と集計更新を確認します。
+- テスト名は日本語で統一し、管理画面が何を自動で守っているかを README からそのまま追えるようにしています。
+- 画面レイアウトや操作感は手動確認、注文データの正規化・保存・集計のようなロジックは自動テストで保証する方針です。
+
 ## 6. 5分評価ガイド
 
 1. ダッシュボード起動後に注文一覧と集計カードを確認

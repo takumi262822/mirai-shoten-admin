@@ -1,111 +1,107 @@
-/**
- * OrderValidator ユニットテスト
- * @file src/utils/order-validator.test.js
- */
-import { test } from 'node:test';
+import test from 'node:test';
 import assert from 'node:assert/strict';
+
+import { AdminConstants } from '../constants/admin-constants.js';
 import { OrderValidator } from './order-validator.js';
 
-test('OrderValidator - isValidEmail()', () => {
+// メールアドレス検証が正常値と異常値を判定できるかを確認する。
+test('メールアドレス検証が正常値と異常値を判定できること', () => {
   const validEmail = OrderValidator.isValidEmail('test@example.com');
-  assert.equal(validEmail.valid, true);
-
   const invalidEmail = OrderValidator.isValidEmail('invalid.email');
-  assert.equal(invalidEmail.valid, false);
-
   const emptyEmail = OrderValidator.isValidEmail('');
+
+  assert.equal(validEmail.valid, true);
+  assert.equal(invalidEmail.valid, false);
   assert.equal(emptyEmail.valid, false);
 });
 
-test('OrderValidator - isValidCustomerName()', () => {
+// 顧客名検証が空文字と過剰長を拒否し、通常入力を受け付けるかを確認する。
+test('顧客名検証が空文字と過剰長を拒否し通常入力を受け付けること', () => {
   const validName = OrderValidator.isValidCustomerName('山田太郎');
-  assert.equal(validName.valid, true);
-
   const nameWithNumber = OrderValidator.isValidCustomerName('John123');
-  assert.equal(nameWithNumber.valid, true);
-
   const emptyName = OrderValidator.isValidCustomerName('');
-  assert.equal(emptyName.valid, false);
-
   const tooLongName = OrderValidator.isValidCustomerName('a'.repeat(100));
+
+  assert.equal(validName.valid, true);
+  assert.equal(nameWithNumber.valid, true);
+  assert.equal(emptyName.valid, false);
   assert.equal(tooLongName.valid, false);
 });
 
-test('OrderValidator - isValidQuantity()', () => {
+// 数量検証が文字列数値も許容しつつ範囲外や非数値を拒否するかを確認する。
+test('数量検証が文字列数値も許容しつつ範囲外や非数値を拒否できること', () => {
   const validQuantity = OrderValidator.isValidQuantity(5);
-  assert.equal(validQuantity.valid, true);
-
   const stringQuantity = OrderValidator.isValidQuantity('10');
-  assert.equal(stringQuantity.valid, true);
-
   const zeroQuantity = OrderValidator.isValidQuantity(0);
-  assert.equal(zeroQuantity.valid, false);
-
   const tooHighQuantity = OrderValidator.isValidQuantity(1000);
-  assert.equal(tooHighQuantity.valid, false);
-
   const invalidQuantity = OrderValidator.isValidQuantity('abc');
+
+  assert.equal(validQuantity.valid, true);
+  assert.equal(stringQuantity.valid, true);
+  assert.equal(zeroQuantity.valid, false);
+  assert.equal(tooHighQuantity.valid, false);
   assert.equal(invalidQuantity.valid, false);
 });
 
-test('OrderValidator - isValidStatus()', () => {
+// ステータス検証が許可済み値のみを受け付けるかを確認する。
+test('ステータス検証が許可済み値のみを受け付けること', () => {
   const validStatus = OrderValidator.isValidStatus('pending');
-  assert.equal(validStatus.valid, true);
-
   const invalidStatus = OrderValidator.isValidStatus('unknown');
-  assert.equal(invalidStatus.valid, false);
-
   const emptyStatus = OrderValidator.isValidStatus('');
+
+  assert.equal(validStatus.valid, true);
+  assert.equal(invalidStatus.valid, false);
   assert.equal(emptyStatus.valid, false);
 });
 
-test('OrderValidator - isValidProductCode()', () => {
+// 商品コード検証が英数字とハイフン構成を満たし、小文字入力も扱えるかを確認する。
+test('商品コード検証が英数字とハイフン構成を満たすこと', () => {
   const validCode = OrderValidator.isValidProductCode('PROD-001');
-  assert.equal(validCode.valid, true);
-
-  const upperCaseConversion = OrderValidator.isValidProductCode('prod-001');
-  assert.equal(upperCaseConversion.valid, true);
-
+  const lowerCaseCode = OrderValidator.isValidProductCode('prod-001');
   const invalidCode = OrderValidator.isValidProductCode('prod@001');
-  assert.equal(invalidCode.valid, false);
-
   const emptyCode = OrderValidator.isValidProductCode('');
+
+  assert.equal(validCode.valid, true);
+  assert.equal(lowerCaseCode.valid, true);
+  assert.equal(invalidCode.valid, false);
   assert.equal(emptyCode.valid, false);
 });
 
-test('OrderValidator - isValidOrderData()', () => {
-  const validOrder = {
-    customerName: '山田太郎',
-    email: 'test@example.com',
-    productCode: 'PROD-001',
-    quantity: 5,
-    totalPrice: 5000,
-    status: 'pending',
-  };
-  const result = OrderValidator.isValidOrderData(validOrder);
-  assert.equal(typeof result, 'boolean');
-  assert.equal(result, true);
+// 合計金額検証が負数や非数値を拒否できるかを確認する。
+test('合計金額検証が負数や非数値を拒否できること', () => {
+  const validPrice = OrderValidator.isValidTotalPrice(5000);
+  const negativePrice = OrderValidator.isValidTotalPrice(-1);
+  const invalidPrice = OrderValidator.isValidTotalPrice('abc');
 
-  const invalidOrder = {
-    customerName: '',
-    email: 'invalid',
-    productCode: '',
-    quantity: 0,
-    totalPrice: -1,
-    status: 'unknown',
-  };
-  const badResult = OrderValidator.isValidOrderData(invalidOrder);
-  assert.equal(typeof badResult, 'boolean');
-  assert.equal(badResult, false);
+  assert.equal(validPrice.valid, true);
+  assert.equal(negativePrice.valid, false);
+  assert.equal(invalidPrice.valid, false);
 });
 
-test('OrderValidator - isValidTotalPrice()', () => {
-  const validPrice = OrderValidator.isValidTotalPrice(5000);
-  assert.equal(validPrice.valid, true);
+// 注文データ全体の総合検証が各必須項目の整合性をまとめて判定できるかを確認する。
+test('有効な注文データを管理画面が受け入れられること', () => {
+  const validOrder = {
+    customerName: '山田太郎',
+    email: 'yamada@example.com',
+    productCode: 'MG-01',
+    quantity: 2,
+    totalPrice: 3600,
+    status: AdminConstants.ORDER_STATUS.PENDING,
+  };
 
-  const negativePrice = OrderValidator.isValidTotalPrice(-1);
-  assert.equal(negativePrice.valid, false);
+  assert.equal(OrderValidator.isValidOrderData(validOrder), true);
+});
 
-  const invalidPrice = OrderValidator.isValidTotalPrice('abc');
-  assert.equal(invalidPrice.valid, false);
+// 不正なメールアドレスを含む注文データを登録前に拒否できるかを確認する。
+test('不正なメールアドレスを含む注文データを拒否できること', () => {
+  const invalidOrder = {
+    customerName: '山田太郎',
+    email: 'invalid-mail',
+    productCode: 'MG-01',
+    quantity: 2,
+    totalPrice: 3600,
+    status: AdminConstants.ORDER_STATUS.PENDING,
+  };
+
+  assert.equal(OrderValidator.isValidOrderData(invalidOrder), false);
 });
