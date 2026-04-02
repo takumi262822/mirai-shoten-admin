@@ -1,233 +1,346 @@
 # 設計書: Mirai Shoten Admin (mirai-shoten-admin)
 
-本設計書の対象は `未来商店商材` に対応する管理画面です。
-`godufo-game`、`quiz-game`、`脱出ゲーム` とは連携せず、未来商店商材の注文データ運用にのみ責務を持ちます。
+## 1. 文書概要
 
-## 1. 目的
-- **開発目的**: EC 注文管理を題材に、CRUD機能・フォーム検証・XSS対策、クラス責務分離設計力を示す。
-- **評価してほしい点**: AdminManager の責務集約、OrderValidator/XSSProtectionAdmin の機能分離、UIコンポーネント再利用、LocalStorage との連携。
+### 1.1 目的
+本書は Mirai Shoten Admin の実装設計書である。画面構成や操作導線の説明は SCREEN-OVERVIEW.md に分離し、本書では JavaScript 実装を対象に、クラス単位・関数単位・主要分岐単位で処理内容を定義する。
 
-## 2. 画面構成・遷移
-### 画面一覧
-- **ダッシュボード** (`index.html`)
-  - 注文一覧表示
-  - 注文追加フォーム
-  - 注文編集フォーム
-  - 顧客情報テーブル
-  - 編集・削除操作パネル
+### 1.2 対象範囲
+- ダッシュボード初期化処理
+- 注文の追加、編集、削除、取得、集計処理
+- 注文一覧と顧客一覧の描画処理
+- 注文入力値の検証処理
+- XSS 対策、テーマ切替、LocalStorage 永続化処理
 
-### 遷移フロー
-```
-起動 → src/main.js 初期化
-      ↓
-    ダッシュボード描画 → テーブルイベント再登録
-      ↓
-    注文追加 / 注文編集 → LocalStorage 保存 → 画面再描画
-      ↓
-    削除確認 → LocalStorage 更新 → 画面再描画
-```
+### 1.3 対象外
+- サーバーサイド API 連携
+- 認証、認可
+- 外部データベース連携
+- メール送信、CSV 出力、分析グラフ
 
-## 3. クラス設計（責務表）
-| クラス | 責務 | 主なメソッド | 依存 |
-|---|---|---|---|
-| AdminManager | 注文データ CRUD 統括 | `addOrder`, `editOrder`, `deleteOrder`, `getAllOrders`, `getOrderById`, `updateOrderStatus` | OrderValidator, XSSProtectionAdmin |
-| AdminUIComponents | UI 要素の描画・更新 | `renderOrderTable`, `renderCustomerInfo`, `showNotice`, `hideNotice`, `clearOrderForm` | XSSProtectionAdmin |
-| OrderValidator | 注文データの妥当性検証 | `isValidOrderData`, `isValidEmail`, `isValidStatus`, `isValidQuantity`, `isValidTotalPrice` | XSSProtectionAdmin |
-| XSSProtectionAdmin | XSS 対策・エスケープ | `escape`, `sanitizeInput`, `normalizeFullWidthAscii` | 文字列処理 |
-| AdminStyleManager | 視覚効果・テーマ管理 | `initTheme`, `setAnimationMode`, `toggleDarkMode`, `applyResponsiveCSS` | DOM |
-| AdminConstants | 定数・設定管理 | - | - |
+## 2. システム構成
 
-## 4. データ設計
-### LocalStorage キー
-- **`adminOrders`**: 注文データ一覧（JSON 文字列）
-  ```json
-  [
-    {
-      "id": "ORD-2024-001",
-      "customerName": "山田太郎",
-      "email": "yamada@example.com",
-      "productCode": "PROD-001",
-      "quantity": 2,
-      "totalPrice": 6000,
-      "status": "pending",
-      "createdAt": "2024-04-01T12:00:00Z",
-      "updatedAt": "2024-04-01T12:00:00Z"
-    }
-  ]
-  ```
-
-### 注文ステータス
-- `pending`: 注文受付中
-- `processing`: 処理中
-- `shipped`: 発送済み
-- `delivered`: 配達完了
-- `cancelled`: キャンセル
-
-### バリデーション規則
-| 項目 | 規則 | エラーメッセージ |
+### 2.1 モジュール構成
+| 区分 | ファイル | 役割 |
 |---|---|---|
-| 顧客名 | 1～50文字, 英数・日本語・スペースのみ | "顧客名は必須で1～50文字です" |
-| メール | RFC 5322 準拠の形式 | "有効なメールアドレスを入力してください" |
-| 数量 | 1～999 の整数 | "数量は1～999の整数です" |
-| ステータス | pending/processing/shipped/delivered/cancelled | "有効なステータスを選択してください" |
+| エントリー | src/main.js | 管理画面の初期化、イベント登録、再描画を統括する |
+| 画面制御 | src/core/admin-manager.js | 注文データの CRUD、正規化、集計、永続化を担当する |
+| UI | src/ui/admin-components.js | 注文一覧、顧客一覧、通知、編集フォーム反映を担当する |
+| スタイル | src/styles/admin-style.js | テーマ、スクロール状態、アニメーション補助を管理する |
+| 定数 | src/constants/admin-constants.js | ステータス、検証閾値、UI 文言、保存キーを定義する |
+| 入力検証 | src/utils/order-validator.js | 注文フォーム入力値の妥当性を検証する |
+| セキュリティ | src/utils/xss.js | サニタイズ、HTML エスケープ、簡易検証を担当する |
 
-## 5. 非機能要件
+### 2.2 起動シーケンス
+1. index.html が src/main.js を module として読み込む。
+2. main.js が AdminManager のシングルトンと AdminStyleManager を生成する。
+3. initializeDashboard() がテーマ、レスポンシブ補助、ヘッダー状態、イベントを初期化する。
+4. updateDashboard() が注文件数、売上、注文一覧、顧客一覧を描画する。
+5. フォーム送信または一覧ボタン押下時に CRUD を実行し、成功後に updateDashboard() を再実行する。
 
-### 命名規則
-- **ファイル**: kebab-case（例: `admin-manager.js`）
-- **クラス**: PascalCase（例: `AdminManager`）
-- **メソッド・変数**: camelCase（例: `addOrder`）
-- **定数**: UPPER_SNAKE_CASE（例: `MAX_QUANTITY`）
+## 3. データ設計
 
-### 品質ゲート
-- **Lint**: `npm run lint` — 全ファイル ESLint:recommended で検証
-- **Test**: `npm test` — Node.js `node:test` で単体テスト実行
-- **GitHub Actions CI**: 各プッシュで自動検証
-- **ブラウザ互換性**: Chrome / Edge 最新版推奨
+### 3.1 LocalStorage
+| キー | 用途 | 保存値 |
+|---|---|---|
+| adminOrders | 管理画面の注文一覧保持 | 標準化済み注文配列 |
+| adminTheme | テーマ状態保持 | light または dark |
 
-### 既知制約
-- ビルドツールなし（バニラ JS、学習優先）
-- バックエンド API なし（LocalStorage のみ）
-- 認証機能なし（ローカル開発用）
+### 3.2 注文データ標準形式
+| 項目 | 型 | 内容 |
+|---|---|---|
+| id | string | 注文 ID。ORD- で始まる一意文字列 |
+| customerName | string | 顧客名 |
+| email | string | メールアドレス |
+| productCode | string | 商品コード |
+| quantity | number | 注文数量 |
+| totalPrice | number | 合計金額 |
+| status | string | pending, processing, shipped, delivered, cancelled |
+| createdAt | string | 作成日時 ISO 文字列 |
+| updatedAt | string | 更新日時 ISO 文字列 |
 
-## 6. 実行フロー・処理
+### 3.3 旧データ互換
+未来商店商材側の旧注文形式を normalizeOrderRecord() で吸収する。
 
-### 初期化フロー
-```
-main.js
-  ↓
-AdminManager.getInstance()
-  ↓
-AdminStyleManager.initTheme()
-  ↓
-updateDashboard()
-  ├── AdminManager.getAllOrders()
-  ├── AdminManager.getStatistics()
-  ├── AdminUIComponents.renderOrderTable()
-  └── AdminUIComponents.renderCustomerInfo()
-  ↓
-テーブルの編集・削除イベント登録
-```
+| 旧キー | 変換先 |
+|---|---|
+| customer | customerName |
+| customerEmail, mail | email |
+| items | productCode |
+| price | totalPrice |
+| date | createdAt, updatedAt |
+| 準備中, 発送済み など | processing, shipped など |
 
-### 注文追加フロー
-```
-Form Submit Event
-  ↓
-formData = { name, email, productCode, quantity, totalPrice }
-  ↓
-OrderValidator.isValidOrderData( formData )
-  ├─ YES: 続行
-  └─ NO: showNotice("エラー") → 終了
-  ↓
-AdminManager.addOrder( formData )
-  ├── orders.push( order )
-  ├── localStorage["adminOrders"] = JSON.stringify( orders )
-  └── AdminUIComponents.renderOrderTable()
-  ↓
-showNotice("注文を追加しました")
-  ↓
-clearOrderForm()
-```
+### 3.4 定数定義
 
-### 注文削除フロー
-```
-Delete Button Click
-  ↓
-confirm("本当に削除しますか？")
-  ├─ OK: 続行
-  └─ Cancel: 終了
-  ↓
-AdminManager.deleteOrder( orderId )
-  ├── orders = orders.filter( o => o.id !== orderId )
-  ├── localStorage["adminOrders"] = JSON.stringify( orders )
-  └── AdminUIComponents.renderOrderTable()
-  ↓
-showNotice("注文を削除しました")
-```
+#### 3.4.1 AdminConstants.ORDER_STATUS
+- PENDING: pending
+- PROCESSING: processing
+- SHIPPED: shipped
+- DELIVERED: delivered
+- CANCELLED: cancelled
 
-## 7. 環境セットアップ
+#### 3.4.2 AdminConstants.VALIDATION
+- MIN_CUSTOMER_NAME: 1
+- MAX_CUSTOMER_NAME: 50
+- MIN_QUANTITY: 1
+- MAX_QUANTITY: 999
+- MIN_PRICE: 0
+- MAX_PRICE: 999999
 
-### 必須環境
-- **Node.js**: 20 以上
-- **npm**: 9 以上（Node.js 同梱）
-- **ブラウザ**: Chrome / Edge 最新版
+## 4. 詳細設計
 
-### package.json スクリプト
-```json
-{
-  "scripts": {
-    "lint": "eslint src/ --ext .js",
-    "test": "node --test src/**/*.test.js",
-    "test:watch": "node --test --watch src/**/*.test.js"
-  }
-}
-```
+### 4.1 src/main.js
 
-### 開発ワークフロー
-1. コード編集 → `npm run lint` → 修正
-2. テスト実行 → `npm test` → 合格確認
-3. ブラウザで動作確認 → Live Server で `index.html` 開く
-4. コミット → `git push origin main`
+#### 4.1.1 initializeDashboard
+- I/F:
+  - 入力: なし
+  - 出力: 初期化済みダッシュボード画面
+- 設定値:
+  - テーマ保存先: adminTheme
+- 処理:
+  1. styleManager.initTheme() を実行する。
+  2. styleManager.applyResponsiveCSS() を実行する。
+  3. styleManager.initHeaderScrollState() を実行する。
+  4. テーマトグル表示を同期する。
+  5. フォーム送信、編集キャンセル、テーマ切替イベントを登録する。
+  6. updateDashboard() を実行する。
+- 分岐:
+  - a. テーマ保存値が存在する場合: 保存値を利用する。
+  - b. 保存値がない場合: light を既定値として適用する。
 
-## 8. 今後の改善
+#### 4.1.2 handleFormSubmit
+- I/F:
+  - 入力: submit event
+  - 出力: 注文追加または更新結果の通知表示
+- 設定値:
+  - editingOrderId が null なら新規追加
+- 処理:
+  1. event.preventDefault() を実行する。
+  2. collectFormData() で入力値を取得する。
+  3. editingOrderId の有無で addOrder または editOrder を呼ぶ。
+  4. 失敗時はエラー通知を表示して終了する。
+  5. 成功時は成功通知、フォーム初期化、再描画を行う。
+- 分岐:
+  - a. editingOrderId がある場合: 編集処理へ進む。
+  - b. editingOrderId がない場合: 新規追加処理へ進む。
+  - c. 検証失敗時: 再描画せず通知のみ表示する。
 
-### 短期（Phase 2）
-- UI 回帰テストの追加（Playwright 等）
-- 注文ステータス変更時のメール通知ログ
-- 売上集計ダッシュボード
+#### 4.1.3 updateDashboard
+- I/F:
+  - 入力: AdminManager が保持する注文一覧
+  - 出力: 統計カード、注文一覧、顧客一覧の DOM 更新
+- 設定値:
+  - 集計対象: totalOrders, totalRevenue, processingCount, deliveredCount
+- 処理:
+  1. getAllOrders() と getStatistics() を取得する。
+  2. 統計カードの数値を書き換える。
+  3. renderOrderTable() と renderCustomerInfo() を実行する。
+  4. attachTableEventListeners() で再描画後のボタンにイベントを再登録する。
 
-### 中期（Phase 3）
-- バックエンド API 連携（Node.js Express 等）
-- 管理者認証・認可機能
-- CSV エクスポート機能
+### 4.2 AdminManager クラス
 
-### 長期（Phase 4）
-- 多言語対応（日本語 / 英語 / 中国語）
-- リアルタイム在庫更新
-- 分析ダッシュボード（GraphQL）
+#### 4.2.1 constructor
+- I/F:
+  - 入力: なし
+  - 出力: orders, storageKey を保持したインスタンス
+- 設定値:
+  - storageKey: AdminConstants.STORAGE_KEYS.ADMIN_ORDERS
+- 処理:
+  1. orders を空配列で初期化する。
+  2. storageKey を設定する。
+  3. loadOrdersFromStorage() を実行する。
 
-## 9. チェックリスト（提出前検証）
+#### 4.2.2 loadOrdersFromStorage
+- I/F:
+  - 入力: LocalStorage 内の adminOrders
+  - 出力: this.orders 更新
+- 処理:
+  1. LocalStorage から文字列を取得する。
+  2. JSON.parse() で配列化する。
+  3. normalizeOrderRecord() を各要素へ適用する。
+  4. falsy を除去して this.orders に格納する。
+- 分岐:
+  - a. 保存値がない場合: 空配列を設定する。
+  - b. JSON 解析に失敗した場合: 警告を出して空配列に戻す。
 
-### コード品質
-- [x] `npm run lint` が成功
-- [x] `npm test` が成功（全テスト合格）
-- [x] 全クラスに JSDoc ヘッダがある
-- [x] 全メソッドに「目的/入力/処理/出力/補足」が記載されている
+#### 4.2.3 normalizeOrderRecord
+- I/F:
+  - 入力: rawOrder
+  - 出力: 標準形式の注文オブジェクト
+- 設定値:
+  - 未設定時顧客名: 未設定
+  - 未設定時商品コード: UNSPECIFIED
+- 処理:
+  1. 新旧キーを吸収して顧客名、メール、商品コード、数量、金額、ステータスを作る。
+  2. normalizeTextField、normalizeQuantity、normalizePrice、normalizeStatus を適用する。
+  3. createdAt と updatedAt を補完する。
+- 分岐:
+  - a. 入力が object でない場合: null を返す。
+  - b. 旧形式のキーしかない場合: 対応表に従って変換する。
 
-### 機能動作
-- [ ] ダッシュボード起動時に注文一覧が表示される
-- [ ] 「注文追加」フォームで新規注文を追加できる
-- [ ] 编集ボタンで既存注文を更新できる（例: ステータス変更）
-- [ ] 削除ボタンで注文を削除できる（確認ダイアログ付き）
-- [ ] ページリロード後も注文データが保持される（LocalStorage）
+#### 4.2.4 addOrder
+- I/F:
+  - 入力: customerName, email, productCode, quantity, totalPrice, status
+  - 出力: success, orderId, message
+- 処理:
+  1. OrderValidator.isValidOrderData() で妥当性を確認する。
+  2. 各入力値を sanitizeInput() する。
+  3. 注文 ID を生成する。
+  4. createdAt, updatedAt を付与して orders に push する。
+  5. saveOrdersToStorage() で保存する。
+- 分岐:
+  - a. 検証失敗時: success false を返す。
+  - b. status 未指定時: pending を補完する。
 
-### XSS 対策
-- [ ] XSSProtectionAdmin.escape() で特殊文字をエスケープ
-- [ ] フォーム入力値を全て sanitizeInput() に通す
-- [ ] innerHTML ではなく textContent / XSS安全な方法で描画
+#### 4.2.5 editOrder
+- I/F:
+  - 入力: orderId, updates
+  - 出力: success, message
+- 処理:
+  1. orderId に一致する index を検索する。
+  2. 既存値をベースに更新値をサニタイズしてマージする。
+  3. 妥当性検証を実行する。
+  4. updatedAt を現在時刻で更新する。
+  5. 配列へ上書きし保存する。
+- 分岐:
+  - a. 対象注文が存在しない場合: 失敗を返す。
+  - b. 更新内容が不正な場合: 失敗を返す。
 
-### ドキュメント
-- [ ] README.md が完成（セットアップから実行まで再現可能）
-- [ ] DESIGN.md が完成（このファイル）
-- [ ] GitHub および npm の package.json に概要がある
+#### 4.2.6 deleteOrder
+- I/F:
+  - 入力: orderId
+  - 出力: success, message
+- 処理:
+  1. 対象 index を検索する。
+  2. 見つかれば splice() で削除する。
+  3. saveOrdersToStorage() を実行する。
+- 分岐:
+  - a. 対象が存在しない場合: 失敗を返す。
+  - b. 対象が存在する場合: 削除成功を返す。
 
-### GitHub
-- [x] CI workflow（.github/workflows/ci.yml） を同梱
-- [ ] リモート repo 作成（mirai-shoten-admin）
-- [ ] 初回 commit "Initial portfolio submission"
-- [ ] main ブランチで保護設定（PR 必須）
+#### 4.2.7 getStatistics
+- I/F:
+  - 入力: this.orders
+  - 出力: totalOrders, totalRevenue, byStatus
+- 処理:
+  1. ORDER_STATUS を走査して byStatus を 0 初期化する。
+  2. 注文一覧を走査し、金額合計とステータス件数を加算する。
 
-## 10. 実装メモ
+### 4.3 AdminUIComponents クラス
 
-### 参照プロジェクト
-本設計は下記 4 プロジェクトの標準を踏襲：
-- **godufo-game**: Manager 系クラスの責務分離
-- **quiz-game**: UI コンポーネント化と画面遷移
-- **脱出ゲーム**: Validator+ XSS 分離パターン
-- **未来商店商材**: CartService + LocalStorage 連携モデル
+#### 4.3.1 renderOrderTable
+- I/F:
+  - 入力: orders, containerId
+  - 出力: 注文テーブル HTML
+- 処理:
+  1. コンテナを取得する。
+  2. 注文が空なら空状態メッセージを表示する。
+  3. 注文ごとに顧客名、メール、ID を escape() する。
+  4. 編集・削除ボタン付きの table HTML を生成する。
+  5. innerHTML に反映する。
+- 分岐:
+  - a. コンテナが存在しない場合: エラーを出して終了する。
+  - b. 注文が空の場合: 空表示のみ返す。
 
-### アーキテクチャ方針
-- **責務分離**: CRUD は AdminManager、UI は AdminUIComponents、検証は OrderValidator
-- **XSS 対策**: すべての外部入力を XSSProtectionAdmin.sanitizeInput() 経由
-- **再利用性**: AdminUIComponents は汎用的に設計（他プロジェクトで流用可能）
-- **テスト容易性**: モジュール単位で独立テスト可能
+#### 4.3.2 renderCustomerInfo
+- I/F:
+  - 入力: orders, containerId
+  - 出力: 顧客集約テーブル
+- 処理:
+  1. email をキーに Map を作る。
+  2. orderCount と totalSpent を顧客単位で加算する。
+  3. エスケープ済みの一覧 HTML を生成する。
+  4. innerHTML に反映する。
+
+#### 4.3.3 showNotice
+- I/F:
+  - 入力: message, type
+  - 出力: 通知 DOM
+- 処理:
+  1. 既存通知を削除する。
+  2. 通知要素を生成して色を設定する。
+  3. body に追加し、3 秒後に削除する。
+- 分岐:
+  - a. type が success の場合: 緑系背景を適用する。
+  - b. それ以外の場合: エラー色を適用する。
+
+### 4.4 OrderValidator クラス
+
+#### 4.4.1 isValidOrderData
+- I/F:
+  - 入力: orderData
+  - 出力: boolean
+- 処理:
+  1. 注文オブジェクト存在確認を行う。
+  2. 顧客名、メール、商品コード、数量、金額、ステータスを順に検証する。
+  3. すべて valid の場合のみ true を返す。
+
+#### 4.4.2 個別検証メソッド
+- isValidCustomerName:
+  - 1 文字以上 50 文字以下か、日本語・英数字・空白のみかを確認する。
+- isValidEmail:
+  - XSSProtectionAdmin.isValidEmail() を用いて形式確認する。
+- isValidProductCode:
+  - 1 文字以上 10 文字以下か、英数字とハイフンのみかを確認する。
+- isValidQuantity:
+  - 整数かつ 1 から 999 の範囲かを確認する。
+- isValidTotalPrice:
+  - 数値であり 0 から 999999 の範囲かを確認する。
+- isValidStatus:
+  - ORDER_STATUS に含まれる値かを確認する。
+
+### 4.5 AdminStyleManager クラス
+
+#### 4.5.1 initTheme
+- I/F:
+  - 入力: LocalStorage 内の adminTheme
+  - 出力: body data-theme 更新
+- 処理:
+  1. 保存済みテーマを取得する。
+  2. 未設定時は light を使う。
+  3. applyTheme() を実行する。
+
+#### 4.5.2 toggleDarkMode
+- I/F:
+  - 入力: currentTheme
+  - 出力: 反転後テーマ適用
+- 処理:
+  1. currentTheme が light か dark かを判定する。
+  2. 反対のテーマを applyTheme() に渡す。
+
+#### 4.5.3 applyResponsiveCSS
+- I/F:
+  - 入力: cursor-glow 要素、mousemove event
+  - 出力: CSS 変数 --x, --y 更新
+- 処理:
+  1. cursor-glow 要素を取得する。
+  2. mousemove 時に座標を CSS 変数へ反映する。
+- 分岐:
+  - a. cursor-glow が存在しない場合: 何も行わない。
+
+## 5. テスト設計
+
+### 5.1 自動テスト対象
+- src/core/admin-manager.test.js:
+  - 旧保存形式の正規化
+  - customerEmail 互換読込
+  - 注文追加後の保存と集計更新
+  - 売上合計とステータス集計
+- src/utils/order-validator.test.js:
+  - 顧客名、メール、商品コード、数量、金額、ステータス検証
+- src/utils/xss.test.js:
+  - escape、sanitizeInput、normalizeFullWidthAscii
+- src/constants/admin-constants.test.js:
+  - 定数契約と値の整合
+
+### 5.2 手動確認対象
+- 注文追加から一覧反映までの導線
+- 編集開始、更新、キャンセル操作
+- 削除確認ダイアログと削除後再描画
+- ダークモード切替とリロード後保持
+
+## 6. 既知制約
+- 永続化は LocalStorage のため複数端末共有はできない。
+- UI 回帰テストは未導入で、レイアウト確認は手動で実施する。
+- 認証と権限制御は未実装で、ポートフォリオ向けの単体管理画面として提供する。
