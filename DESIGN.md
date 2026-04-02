@@ -279,16 +279,88 @@
 #### 4.4.2 個別検証メソッド
 - isValidCustomerName:
   - 1 文字以上 50 文字以下か、日本語・英数字・空白のみかを確認する。
+  - 実装パターン: `/^[a-zA-Z0-9\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff\s]*$/`
 - isValidEmail:
   - XSSProtectionAdmin.isValidEmail() を用いて形式確認する。
+  - 実装パターン: `/^[^\s@]+@[^\s@]+\.[^\s@]+$/`（RFC 5322 簡易チェック）
 - isValidProductCode:
   - 1 文字以上 10 文字以下か、英数字とハイフンのみかを確認する。
+  - 実装パターン: `/^[A-Z0-9-]*$/`（toUpperCase 後に適用）
 - isValidQuantity:
   - 整数かつ 1 から 999 の範囲かを確認する。
+  - 実装: `Number.isInteger(num)` かつ `isInRange(num, MIN, MAX)`
 - isValidTotalPrice:
   - 数値であり 0 から 999999 の範囲かを確認する。
+  - 実装: `Number.isFinite(price)` かつ `isInRange(price, MIN, MAX)`
 - isValidStatus:
   - ORDER_STATUS に含まれる値かを確認する。
+  - 実装: `Object.values(AdminConstants.ORDER_STATUS).includes(status)`
+
+### 4.5 XSSProtectionAdmin クラス
+
+#### 4.5.1 escape
+- I/F:
+  - 入力: str
+  - 出力: HTML エスケープ済み文字列
+- 変換テーブル:
+  - `&` → `&amp;`
+  - `<` → `&lt;`
+  - `>` → `&gt;`
+  - `"` → `&quot;`
+  - `'` → `&#x27;`
+- 実装パターン:
+  - 5 回の `.replace()` チェーンで各文字を個別置換する
+
+#### 4.5.2 sanitizeInput
+- I/F:
+  - 入力: input
+  - 出力: クリーン化済み文字列
+- 処理:
+  1. null / 非文字列なら空文字を返す。
+  2. trim() で前後空白を除去する。
+  3. `<script…>…</script>` パターンを検出したら空文字を返す。
+  4. `javascript:` パターンを検出したら空文字を返す。
+  5. `onXXX=` インラインハンドラパターンを検出したら空文字を返す。
+  6. 検出がなければ escape() を通した値を返す。
+- 実装パターン:
+  - script 検出: `/<script\b[^>]*>[\s\S]*?<\/script>/i`
+  - js プロトコル検出: `/javascript\s*:/i`
+  - ハンドラ検出: `/on\w+\s*=/i`
+
+#### 4.5.3 normalizeFullWidthAscii
+- 処理:
+  1. 全角英大文字・小文字・数字を `charCode - 0xFEE0` で半角変換する。
+  2. 全角スペース (U+3000) を半角スペースへ変換する。
+- 実装パターン:
+  - `/[Ａ-Ｚａ-ｚ０-９]/g` を半角変換
+  - `/　/g` → `' '`
+
+#### 4.5.4 isValidEmail
+- 実装パターン: `/^[^\s@]+@[^\s@]+\.[^\s@]+$/`
+
+#### 4.5.5 isInRange
+- 実装: `value >= min && value <= max`
+
+## 5. 主要 DOM セレクター一覧
+
+### 5.1 index.html ダッシュボード
+| セレクター | 種別 | 役割 |
+|---|---|---|
+| `#order-form` | id | 注文追加・編集フォーム |
+| `#customer-name` | id | 顧客名入力欄 |
+| `#email` | id | メールアドレス入力欄 |
+| `#product-code` | id | 商品コード入力欄 |
+| `#quantity` | id | 数量入力欄 |
+| `#total-price` | id | 合計金額入力欄 |
+| `#status` | id | ステータス選択 |
+| `#orders-container` | id | 注文テーブル描画コンテナ |
+| `#customers-container` | id | 顧客一覧描画コンテナ |
+| `#total-orders` | id | 総注文件数表示 |
+| `#total-revenue` | id | 売上合計表示 |
+| `#processing-count` | id | 処理中件数表示 |
+| `#delivered-count` | id | 配達済み件数表示 |
+| `#theme-toggle` | id | テーマ切替ボタン |
+| `#cancel-edit` | id | 編集キャンセルボタン |
 
 ### 4.5 AdminStyleManager クラス
 
