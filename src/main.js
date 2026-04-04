@@ -1,8 +1,7 @@
 /**
- * 管理ダッシュボード初期化エントリー
+ * 管理ダッシュボードの初期化エントリーポイント。
  * @file src/main.js
  * @author Takumi Harada
- * @date 2026-04-01
  */
 import { AdminManager } from './core/admin-manager.js';
 import { AdminUIComponents } from './ui/admin-components.js';

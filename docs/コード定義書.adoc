@@ -1,0 +1,101 @@
+= コード定義書
+:project: mirai-shoten-admin
+:author: Takumi Harada
+:revdate: 2026-04-05
+:doctype: article
+:toc:
+:toc-title: 目次
+:sectnums:
+
+== 概要
+
+本書はプロジェクト「{project}」に登場するコード値（識別子・種別値）を列挙したものです。
+ソースファイル `src/constants/admin-constants.js` から逆引きで抽出しています。
+
+---
+
+== 注文ステータスコード（AdminConstants.ORDER_STATUS）
+
+ファイル: `src/constants/admin-constants.js`
+
+[cols="2,2,4", options="header"]
+|===
+|定数名
+|コード値
+|説明
+
+|ORDER_STATUS.PENDING
+|'pending'
+|注文受付済み・処理前の状態
+
+|ORDER_STATUS.PROCESSING
+|'processing'
+|注文処理中（確認・在庫引当中）
+
+|ORDER_STATUS.SHIPPED
+|'shipped'
+|発送済み・輸送中の状態
+
+|ORDER_STATUS.DELIVERED
+|'delivered'
+|顧客への配達完了
+
+|ORDER_STATUS.CANCELLED
+|'cancelled'
+|注文キャンセル済み
+
+|===
+
+=== ステータスバッジの色対応
+
+[cols="2,2,3", options="header"]
+|===
+|コード値
+|背景色
+|表示場所
+
+|pending
+|#ff9900（オレンジ）
+|注文一覧テーブルのステータスバッジ
+
+|processing
+|#3366cc（ブルー）
+|同上
+
+|shipped
+|#0066cc（ディープブルー）
+|同上
+
+|delivered
+|#009900（グリーン）
+|同上
+
+|cancelled
+|#999999（グレー）
+|同上
+
+|===
+
+---
+
+== テーマコード（AdminConstants.THEME）
+
+[cols="2,2,4", options="header"]
+|===
+|定数名
+|コード値
+|説明
+
+|THEME.LIGHT
+|'light'
+|ライトモード。data-theme="light" を body に付与する
+
+|THEME.DARK
+|'dark'
+|ダークモード。data-theme="dark" を body に付与する
+
+|THEME.DEFAULT
+|'light'
+|初回アクセス時のデフォルトテーマ
+
+|===

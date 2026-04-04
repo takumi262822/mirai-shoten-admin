@@ -1,37 +1,17 @@
 /**
- * 注文データ検証ロジック
- * @class OrderValidator
- * @description 注文追加・編集時のフォーム入力値の妥当性を一元管理
+ * 注文追加・編集時の入力値の妥当性を検証するクラス。
  * @author Takumi Harada
- * @date 2026-04-01
  */
 import { AdminConstants } from '../constants/admin-constants.js';
 import { XSSProtectionAdmin } from './xss.js';
 
-/**
- * 注文入力値の妥当性を検証するクラス。
- *
- * 目的: 管理画面の注文追加・編集で不正な入力を防ぐ。
- * 入力: 顧客名、メール、商品コード、数量、金額、ステータスなどの注文項目。
- * 処理: 項目ごとの形式・範囲・許可値を検証し、結果を返す。
- * 出力: 各項目の検証結果と、注文全体の妥当性判定を返す。
- * 補足: 詳細なエラーメッセージを返せるため、UI 側の表示にもそのまま利用できる。
- *
- * @author Takumi Harada
- * @date 2026-04-01
- */
 export class OrderValidator {
   /**
-   * 注文データ全体の妥当性検証
-   *
-   * 目的: 注文追加前に各フィールドが全て有効か一括チェック
-   * 入力: orderData (object) - { customerName, email, productCode, quantity, totalPrice, status }
-   * 処理: 各フィールドの個別検証メソッドを順次実行
-  * 出力: boolean - 全て有効なら true、1つでも不正なら false
-  * 補足: 各フィールドの詳細メッセージは個別メソッド側で管理する
+   * 注文データ全体の妥当性を一括検証する。
+   * 1項目でも不正な場合は false を返す。
    *
    * @param {object} orderData - 検証対象の注文オブジェクト
-   * @returns {boolean} 有効なら true
+   * @returns {boolean} 全て有効なら true
    */
   static isValidOrderData(orderData) {
     if (!orderData || typeof orderData !== 'object') {
@@ -47,16 +27,10 @@ export class OrderValidator {
   }
 
   /**
-   * 顧客名の検証
-   *
-   * 目的: 顧客名が名目上の要件を満たしているか確認
-   * 入力: name (string) - 顧客名候補
-   * 処理: null チェック → 長さチェック（1～50文字） → 有効文字チェック（英数・日本語・スペース）
-   * 出力: { valid: boolean, message: string }
-   * 補足: エラーメッセージは UI に直接表示可能型
+   * 顧客名の入力値を検証する、1～50 文字で英数字・日本語・スペースのみ許容。
    *
    * @param {string} name - 検証対象の顧客名
-   * @returns {object} { valid: boolean, message: string }
+   * @returns {{ valid: boolean, message: string }}
    */
   static isValidCustomerName(name) {
     if (!name || typeof name !== 'string') {
@@ -82,16 +56,10 @@ export class OrderValidator {
   }
 
   /**
-   * メールアドレスの検証
-   *
-   * 目的: メール形式の妥当性をチェック
-   * 入力: email (string) - メールアドレス候補
-   * 処理: XSSProtectionAdmin.isValidEmail() を用いて RFC 5322 簡易形式確認
-   * 出力: { valid: boolean, message: string }
-   * 補足: 送達可能性の確認ではなく、形式チェックのみ
+   * メールアドレスの形式を検証する。送達確認ではなく形式チェックのみ。
    *
    * @param {string} email - 検証対象のメールアドレス
-   * @returns {object} { valid: boolean, message: string }
+   * @returns {{ valid: boolean, message: string }}
    */
   static isValidEmail(email) {
     if (!email || typeof email !== 'string') {
@@ -105,16 +73,10 @@ export class OrderValidator {
   }
 
   /**
-   * 商品コードの検証
-   *
-   * 目的: 商品コードが有効か確認
-   * 入力: productCode (string) - 商品コード候補
-   * 処理: null チェック → 長さチェック（1～3文字） → 英数字のみチェック
-   * 出力: { valid: boolean, message: string }
-   * 補足: 商品レジストリ自体の確認は後段で実施（今は形式チェックのみ）
+   * 商品コードの形式を検証する、1～10文字の英数字・ハイフンのみ許容。
    *
    * @param {string} productCode - 検証対象の商品コード
-   * @returns {object} { valid: boolean, message: string }
+   * @returns {{ valid: boolean, message: string }}
    */
   static isValidProductCode(productCode) {
     if (!productCode || typeof productCode !== 'string') {
@@ -135,16 +97,10 @@ export class OrderValidator {
   }
 
   /**
-   * 注文数量の検証
-   *
-   * 目的: 数量が有効な整数か確認
-   * 入力: quantity (number | string) - 数量候補
-   * 処理: 数値変換 → 整数判定 → 範囲チェック（1～999）
-   * 出力: { valid: boolean, message: string }
-   * 補足: フォームから来た値は文字列の可能性があるため、型チェック必須
+   * 注文数量が整数かつ有効範囲内（1～999）か検証する。
    *
    * @param {number|string} quantity - 検証対象の数量
-   * @returns {object} { valid: boolean, message: string }
+   * @returns {{ valid: boolean, message: string }}
    */
   static isValidQuantity(quantity) {
     if (quantity === null || quantity === '') {
@@ -170,16 +126,10 @@ export class OrderValidator {
   }
 
   /**
-   * 合計金額の検証
-   *
-   * 目的: 注文金額が 0 以上の範囲内に収まっているか確認
-   * 入力: totalPrice (number | string) - 金額候補
-   * 処理: 数値変換 → 有限数判定 → 範囲チェック
-   * 出力: { valid: boolean, message: string }
-   * 補足: 小数は許容するが、負数と上限超過は不正とする
+   * 合計金額が 0 以上かつ上限以内か検証する。小数は許容するが負数は不正とする。
    *
    * @param {number|string} totalPrice - 検証対象の合計金額
-   * @returns {object} { valid: boolean, message: string }
+   * @returns {{ valid: boolean, message: string }}
    */
   static isValidTotalPrice(totalPrice) {
     if (totalPrice === null || totalPrice === '' || totalPrice === undefined) {
@@ -201,16 +151,10 @@ export class OrderValidator {
   }
 
   /**
-   * 注文ステータスの検証
-   *
-   * 目的: ステータスが許可された値か確認
-   * 入力: status (string) - ステータス候補
-   * 処理: AdminConstants.ORDER_STATUS の値に含まれるか確認
-   * 出力: { valid: boolean, message: string }
-   * 補足: ステータス遷移ルール（例: pending → shipped） はここでは検証しない
+   * ステータスが AdminConstants.ORDER_STATUS の許可値に含まれるか検証する。
    *
    * @param {string} status - 検証対象のステータス
-   * @returns {object} { valid: boolean, message: string }
+   * @returns {{ valid: boolean, message: string }}
    */
   static isValidStatus(status) {
     if (!status || typeof status !== 'string') {
@@ -226,6 +170,4 @@ export class OrderValidator {
   }
 }
 
-// クラス説明: 注文フォーム入力の妥当性を一元的に検証する責務を担当
-// 責務: 各フィールド（顧客名・メール・数量・ステータス等）の個別検証 + 全体妥当性チェック
-// 依存: AdminConstants, XSSProtectionAdmin
+
