@@ -1,0 +1,117 @@
+openapi: 3.0.3
+info:
+  title: 未来商店管理画面（mirai-shoten-admin）データ仕様
+  description: |-
+    MIRAI SHOTEN 管理画面はブラウザ上で動作する注文管理システムです。
+    外部 REST API は持たず、localStorage から未来商店（mirai-shoten）が書き込んだ
+    注文データを読み込んで管理します。
+    ステータス更新結果も同一の localStorage キーに書き戻します。
+  version: 1.0.0
+  contact:
+    name: Takumi Harada
+
+servers: []
+
+paths: {}
+
+components:
+  schemas:
+
+    OrderRecord:
+      type: object
+      description: 注文1件分のデータ
+      required: [id, customerName, items, total, status, createdAt]
+      properties:
+        id:
+          type: string
+          description: 注文ID（タイムスタンプベース）
+          example: "order-1711234567890"
+        customerName:
+          type: string
+          description: 注文者氏名
+        customerKana:
+          type: string
+          description: 注文者氏名（フリガナ）
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+        tel:
+          type: string
+          description: 電話番号
+        zip:
+          type: string
+          description: 郵便番号
+          example: "123-4567"
+        address:
+          type: string
+          description: 住所
+        items:
+          type: array
+          description: 注文商品リスト
+          items:
+            $ref: '#/components/schemas/CartItem'
+        total:
+          type: integer
+          description: 合計金額（円）
+          minimum: 0
+        status:
+          type: string
+          description: 注文ステータス
+          enum: [pending, processing, shipped, delivered, cancelled]
+          default: pending
+        createdAt:
+          type: string
+          format: date-time
+          description: 注文日時（ISO 8601形式）
+
+    CartItem:
+      type: object
+      description: 注文内の商品1件分のデータ
+      required: [id, name, price, quantity]
+      properties:
+        id:
+          type: string
+          description: 商品ID
+        name:
+          type: string
+          description: 商品名
+        price:
+          type: integer
+          description: 単価（円）
+          minimum: 0
+        quantity:
+          type: integer
+          description: 数量
+          minimum: 1
+          maximum: 999
+
+    OrderSummary:
+      type: object
+      description: 集計結果データ（AdminManager.calcSummary の戻り値）
+      properties:
+        totalCount:
+          type: integer
+          description: 総注文件数
+        totalAmount:
+          type: integer
+          description: 総合計金額（円）
+        byStatus:
+          type: object
+          description: ステータス別件数
+          additionalProperties:
+            type: integer
+          example:
+            pending: 3
+            processing: 1
+            shipped: 2
+            delivered: 5
+            cancelled: 0
+
+x-storage-keys:
+  adminOrders:
+    description: "注文履歴を保持する localStorage キー（mirai-shoten と共有）"
+    type: "JSON文字列（OrderRecord[]）"
+    read-by: "src/core/admin-manager.js"
+    write-by: "src/core/admin-manager.js（ステータス更新時）, mirai-shoten の購入完了処理"
+    backward-compat: "旧形式（items が未定義の場合など）はロード時に正規化して処理する"
