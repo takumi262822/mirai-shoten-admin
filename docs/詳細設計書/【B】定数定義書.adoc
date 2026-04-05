@@ -1,4 +1,4 @@
-= 未来商店管理画面（mirai-shoten-admin）: 定数一覧
+﻿= 未来商店管理画面（mirai-shoten-admin）: 定数一覧
 :lang: ja
 :doctype: book
 :toc: left
@@ -28,22 +28,22 @@
 |===
 ^.^|No. ^.^|定数名（論理名） ^.^|定数名（物理名） ^.^|型 ^.^|設定値 ^.^|備考
 
-^.^|{counter:定数} <.^|顧客名最小文字数 <.^|VALIDATION.MIN_CUSTOMER_NAME <.^|number <.^|1 <.^|顧客名の最小文字数
-^.^|{counter:定数} <.^|顧客名最大文字数 <.^|VALIDATION.MAX_CUSTOMER_NAME <.^|number <.^|50 <.^|顧客名の最大文字数
-^.^|{counter:定数} <.^|注文数量最小値 <.^|VALIDATION.MIN_QUANTITY <.^|number <.^|1 <.^|注文数量の最小値
-^.^|{counter:定数} <.^|注文数量最大値 <.^|VALIDATION.MAX_QUANTITY <.^|number <.^|999 <.^|注文数量の最大値
-^.^|{counter:定数} <.^|合計金額最小値 <.^|VALIDATION.MIN_PRICE <.^|number <.^|0 <.^|合計金額の最小値（0 円は許容）
-^.^|{counter:定数} <.^|合計金額最大値 <.^|VALIDATION.MAX_PRICE <.^|number <.^|999999 <.^|合計金額の最大値
-^.^|{counter:定数} <.^|注文一覧ストレージキー <.^|STORAGE_KEYS.ADMIN_ORDERS <.^|string <.^|"adminOrders" <.^|注文一覧を永続化する localStorage キー
-^.^|{counter:定数} <.^|カート共有ストレージキー <.^|STORAGE_KEYS.FUTURE_SHOP_CART <.^|string <.^|"futureShopCart" <.^|未来商店商材のカートデータと共有する localStorage キー（読込専用）
-^.^|{counter:定数} <.^|注文追加通知メッセージ <.^|UI_MESSAGES.ORDER_ADDED <.^|string <.^|注文を追加しました <.^|注文追加成功時の通知メッセージ
-^.^|{counter:定数} <.^|注文更新通知メッセージ <.^|UI_MESSAGES.ORDER_UPDATED <.^|string <.^|注文を更新しました <.^|注文更新成功時の通知メッセージ
-^.^|{counter:定数} <.^|注文削除通知メッセージ <.^|UI_MESSAGES.ORDER_DELETED <.^|string <.^|注文を削除しました <.^|注文削除成功時の通知メッセージ
-^.^|{counter:定数} <.^|メール検証エラーメッセージ <.^|UI_MESSAGES.INVALID_EMAIL <.^|string <.^|有効なメールアドレスを入力してください <.^|メール検証エラー時のメッセージ
-^.^|{counter:定数} <.^|数量検証エラーメッセージ <.^|UI_MESSAGES.INVALID_QUANTITY <.^|string <.^|数量は1〜999の整数です <.^|数量検証エラー時のメッセージ
-^.^|{counter:定数} <.^|ステータス検証エラーメッセージ <.^|UI_MESSAGES.INVALID_STATUS <.^|string <.^|有効なステータスを選択してください <.^|ステータス検証エラー時のメッセージ
-^.^|{counter:定数} <.^|必須フィールドエラーメッセージ <.^|UI_MESSAGES.REQUIRED_FIELD <.^|string <.^|この項目は必須です <.^|必須フィールド未入力時のメッセージ
-^.^|{counter:定数} <.^|削除確認メッセージ <.^|UI_MESSAGES.CONFIRM_DELETE <.^|string <.^|本当に削除しますか？ <.^|削除確認ダイアログの表示文言
-^.^|{counter:定数} <.^|HTTPタイムアウト時間 <.^|API.TIMEOUT_MS <.^|number <.^|5000 <.^|将来の HTTP リクエストタイムアウト時間 (ms)（現在は未使用）
-^.^|{counter:定数} <.^|HTTPリトライ上限回数 <.^|API.RETRY_COUNT <.^|number <.^|3 <.^|将来のリトライ上限回数（現在は未使用）
+^.^|{counter:定数} <.^|顧客名最小文字数 <.^|VALIDATION.MIN_CUSTOMER_NAME <.^|数値型 <.^|1 <.^|顧客名の最小文字数
+^.^|{counter:定数} <.^|顧客名最大文字数 <.^|VALIDATION.MAX_CUSTOMER_NAME <.^|数値型 <.^|50 <.^|顧客名の最大文字数
+^.^|{counter:定数} <.^|注文数量最小値 <.^|VALIDATION.MIN_QUANTITY <.^|数値型 <.^|1 <.^|注文数量の最小値
+^.^|{counter:定数} <.^|注文数量最大値 <.^|VALIDATION.MAX_QUANTITY <.^|数値型 <.^|999 <.^|注文数量の最大値
+^.^|{counter:定数} <.^|合計金額最小値 <.^|VALIDATION.MIN_PRICE <.^|数値型 <.^|0 <.^|合計金額の最小値（0 円は許容）
+^.^|{counter:定数} <.^|合計金額最大値 <.^|VALIDATION.MAX_PRICE <.^|数値型 <.^|999999 <.^|合計金額の最大値
+^.^|{counter:定数} <.^|注文一覧ストレージキー <.^|STORAGE_KEYS.ADMIN_ORDERS <.^|文字型 <.^|"adminOrders" <.^|注文一覧を永続化する localStorage キー
+^.^|{counter:定数} <.^|カート共有ストレージキー <.^|STORAGE_KEYS.FUTURE_SHOP_CART <.^|文字型 <.^|"futureShopCart" <.^|未来商店商材のカートデータと共有する localStorage キー（読込専用）
+^.^|{counter:定数} <.^|注文追加通知メッセージ <.^|UI_MESSAGES.ORDER_ADDED <.^|文字型 <.^|注文を追加しました <.^|注文追加成功時の通知メッセージ
+^.^|{counter:定数} <.^|注文更新通知メッセージ <.^|UI_MESSAGES.ORDER_UPDATED <.^|文字型 <.^|注文を更新しました <.^|注文更新成功時の通知メッセージ
+^.^|{counter:定数} <.^|注文削除通知メッセージ <.^|UI_MESSAGES.ORDER_DELETED <.^|文字型 <.^|注文を削除しました <.^|注文削除成功時の通知メッセージ
+^.^|{counter:定数} <.^|メール検証エラーメッセージ <.^|UI_MESSAGES.INVALID_EMAIL <.^|文字型 <.^|有効なメールアドレスを入力してください <.^|メール検証エラー時のメッセージ
+^.^|{counter:定数} <.^|数量検証エラーメッセージ <.^|UI_MESSAGES.INVALID_QUANTITY <.^|文字型 <.^|数量は1〜999の整数です <.^|数量検証エラー時のメッセージ
+^.^|{counter:定数} <.^|ステータス検証エラーメッセージ <.^|UI_MESSAGES.INVALID_STATUS <.^|文字型 <.^|有効なステータスを選択してください <.^|ステータス検証エラー時のメッセージ
+^.^|{counter:定数} <.^|必須フィールドエラーメッセージ <.^|UI_MESSAGES.REQUIRED_FIELD <.^|文字型 <.^|この項目は必須です <.^|必須フィールド未入力時のメッセージ
+^.^|{counter:定数} <.^|削除確認メッセージ <.^|UI_MESSAGES.CONFIRM_DELETE <.^|文字型 <.^|本当に削除しますか？ <.^|削除確認ダイアログの表示文言
+^.^|{counter:定数} <.^|HTTPタイムアウト時間 <.^|API.TIMEOUT_MS <.^|数値型 <.^|5000 <.^|将来の HTTP リクエストタイムアウト時間 (ms)（現在は未使用）
+^.^|{counter:定数} <.^|HTTPリトライ上限回数 <.^|API.RETRY_COUNT <.^|数値型 <.^|3 <.^|将来のリトライ上限回数（現在は未使用）
 |===
