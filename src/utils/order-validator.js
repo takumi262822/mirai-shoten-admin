@@ -1,6 +1,7 @@
-/**
+﻿/**
  * 注文追加・編集時の入力値の妥当性を検証するクラス。
  * @author Takumi Harada
+ * @date 2026/3/31
  */
 import { AdminConstants } from '../constants/admin-constants.js';
 import { XSSProtectionAdmin } from './xss.js';

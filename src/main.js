@@ -1,12 +1,14 @@
-/**
+﻿/**
  * 管理ダッシュボードの初期化エントリーポイント。
  * @file src/main.js
  * @author Takumi Harada
+ * @date 2026/3/31
  */
 import { AdminManager } from './core/admin-manager.js';
 import { AdminUIComponents } from './ui/admin-components.js';
 import { AdminStyleManager } from './styles/admin-style.js';
 import { AdminConstants } from './constants/admin-constants.js';
+import { Footer } from './ui/footer.js';
 
 const adminManager = AdminManager.getInstance();
 const styleManager = new AdminStyleManager();
@@ -133,3 +135,4 @@ function initializeDashboard() {
 }
 
 initializeDashboard();
+new Footer().setYear();

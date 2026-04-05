@@ -1,6 +1,7 @@
-/**
+﻿/**
  * 注文管理システム全体で共通利用する定数定義。
  * @author Takumi Harada
+ * @date 2026/3/31
  */
 export const AdminConstants = {
   // 注文ステータス定義

@@ -1,6 +1,7 @@
-/**
+﻿/**
  * テーマ切替・レスポンシブ・スクロール追従ヘッダーなどダッシュボードの表示スタイルを制御するクラス。
  * @author Takumi Harada
+ * @date 2026/3/31
  */
 import { AdminConstants } from '../constants/admin-constants.js';
 

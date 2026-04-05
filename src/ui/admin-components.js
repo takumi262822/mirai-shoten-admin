@@ -1,6 +1,7 @@
-/**
+﻿/**
  * 管理画面の UI 描画ユーティリティ。
  * @author Takumi Harada
+ * @date 2026/3/31
  */
 import { XSSProtectionAdmin } from '../utils/xss.js';
 import { AdminConstants } from '../constants/admin-constants.js';

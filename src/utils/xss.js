@@ -1,6 +1,7 @@
-/**
+﻿/**
  * 管理画面で使用するユーザー入力をエスケープ・サニタイズし、XSS を防ぐクラス。
  * @author Takumi Harada
+ * @date 2026/3/31
  */
 export class XSSProtectionAdmin {
   /**

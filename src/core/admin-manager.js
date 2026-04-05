@@ -1,6 +1,7 @@
-/**
+﻿/**
  * localStorage を介して注文データの CRUD・検索・統計更新を統括するシングルトンクラス。
  * @author Takumi Harada
+ * @date 2026/3/31
  */
 import { AdminConstants } from '../constants/admin-constants.js';
 import { OrderValidator } from '../utils/order-validator.js';
