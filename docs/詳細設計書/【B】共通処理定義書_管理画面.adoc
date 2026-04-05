@@ -1,0 +1,209 @@
+= 未来商店管理画面（mirai-shoten-admin）: 共通処理定義書
+:lang: ja
+:doctype: book
+:toc: left
+:toclevels: 5
+:toc-title: 目次
+:sectnums:
+:sectnumlevels: 5
+:sectlinks:
+:imagesdir: ./images
+:icons: font
+:source-highlighter: coderay
+:example-caption: 例
+:table-caption: 表
+:figure-caption: 図
+
+[#変更履歴, title="変更履歴", cols="1,2,3,3,3,3", options="header", align="center"]
+|===
+^.^|No. ^.^|版数 ^.^|変更者 <.^|作成日/変更日 <.^|変更箇所 <.^|変更内容
+
+^.^|{counter:変更履歴} |1.00 |Takumi Harada |2026/3/31 ^.^|- |新規作成
+^.^|{counter:変更履歴} |1.01 |Takumi Harada |2026/4/5 <.^|全体 <.^|ファイル名変更・書式統一（格納先・説明・変更履歴）
+|===
+
+== 概要
+
+本書は未来商店管理画面（mirai-shoten-admin）全体で使用する共通ユーティリティの仕様を記載します。 +
+XSS 対策・入力バリデーション・UI コンポーネントを対象とします。
+
+---
+
+== 1. XSSProtectionAdmin クラス
+
+=== 格納先
+
+`src/utils/xss.js`
+
+=== 説明
+
+管理画面へのユーザー入力をエスケープ・サニタイズし、XSS 攻撃を防ぐ。 +
+全角英数字の半角正規化とメールアドレス・数値範囲の検証も担う。
+
+=== 静的メソッド
+
+==== escape(str)
+
+文字列内の HTML 特殊文字をエンティティに置換して返す。
+
+[cols="2,2,4", options="header"]
+|===
+^.^|項目 ^.^|型 <.^|内容
+
+<.^|引数 `str` |any |任意の値。非文字列の場合は空文字を返す。
+<.^|戻り値 |string |HTML 特殊文字をエンティティに置換した文字列
+|===
+
+.変換表
+[cols="1,1", options="header"]
+|===
+|入力文字|変換後エンティティ
+|`&`|`&amp;`
+|`<`|`&lt;`
+|`>`|`&gt;`
+|`"`|`&quot;`
+|`'`|`&#x27;`
+|===
+
+*実装方針:*
+
+- 各文字を個別に `replace` で置換する（チェーン方式）
+- 非文字列は即座に空文字を返す
+
+---
+
+==== sanitizeInput(input)
+
+入力値に対してトリム→危険パターン検出→エスケープの順で安全化する。
+
+[cols="2,2,4", options="header"]
+|===
+^.^|項目 ^.^|型 <.^|内容
+
+<.^|引数 `input` |any |任意の値。`null` / 非文字列の場合は空文字を返す。
+<.^|戻り値 |string |サニタイズ済み文字列（危険な入力は空文字）
+|===
+
+*処理フロー:*
+
+. `null` または非文字列の場合は空文字を返す
+. `input.trim()` で前後空白を除去する
+. 以下のいずれかが検出された場合は空文字を返す
+  * `<script>...</script>` タグパターン
+  * `javascript:` プロトコル
+  * `onXxx=` 形式のインラインイベントハンドラ
+. 検出されなかった場合は `escape(normalized)` を呼び出して返す
+
+---
+
+==== normalizeFullWidthAscii(str)
+
+全角英数字・スペースを半角に変換して返す。
+
+[cols="2,2,4", options="header"]
+|===
+^.^|項目 ^.^|型 <.^|内容
+
+<.^|引数 `str` |any |任意の文字列。falsy または非文字列の場合は空文字を返す。
+<.^|戻り値 |string |半角変換済み文字列
+|===
+
+.変換ルール
+[cols="2,2", options="header"]
+|===
+|変換前|変換後
+|全角英大文字 `Ａ-Ｚ`|半角英大文字 `A-Z`
+|全角英小文字 `ａ-ｚ`|半角英小文字 `a-z`
+|全角数字 `０-９`|半角数字 `0-9`
+|全角スペース `　`（U+3000）|半角スペース ` `
+|===
+
+*実装方針:*
+
+- 文字コード差分 `0xFEE0` を利用して全角→半角変換する
+- 全角スペースは `replace(/　/g, ' ')` で置換する
+
+---
+
+==== isValidEmail(email)
+
+メールアドレスの形式を簡易検証する。
+
+[cols="2,2,4", options="header"]
+|===
+^.^|項目 ^.^|型 <.^|内容
+
+<.^|引数 `email` |any |任意の値。falsy または非文字列の場合は `false` を返す。
+<.^|戻り値 |boolean |`/^[^\s@]+@[^\s@]+\.[^\s@]+$/` に一致すれば `true`
+|===
+
+---
+
+==== isInRange(value, min, max)
+
+数値が指定した範囲内にあるかを検証する。
+
+[cols="2,2,4", options="header"]
+|===
+^.^|項目 ^.^|型 <.^|内容
+
+<.^|引数 `value` |number\|string |検査対象値（`Number()` で変換して評価する）
+<.^|引数 `min` |number |最小値（含む）
+<.^|引数 `max` |number |最大値（含む）
+<.^|戻り値 |boolean |`Number(value)` が NaN でなく `min <= n <= max` であれば `true`
+|===
+
+---
+
+== 2. OrderValidator クラス
+
+=== 格納先
+
+`src/utils/order-validator.js`
+
+=== 説明
+
+注文データのステータス値・数値項目の形式チェックを行う。
+
+=== 主要メソッド
+
+[cols="2,4", options="header"]
+|===
+^.^|メソッド <.^|説明
+
+|`isValidOrderData(data)` |注文データオブジェクトの必須項目・型・値範囲を一括検証する。エラーがなければ `true` を返す
+|`isValidStatus(status)` |`AdminConstants.ORDER_STATUS` の値に含まれるか確認する
+|===
+
+---
+
+== 3. AdminManager クラス
+
+=== 格納先
+
+`src/core/admin-manager.js`
+
+=== 説明
+
+localStorage の `adminOrders` キーから注文データを読み込み、フィルタリング・ステータス更新・集計を行う。
+
+=== 主要メソッド
+
+[cols="2,4", options="header"]
+|===
+^.^|メソッド <.^|説明
+
+|`loadOrders()` |localStorage から注文データを読み込み、旧形式を正規化して返す
+|`filterOrders(orders, filters)` |ステータス・日付・キーワードで絞り込んだ注文配列を返す
+|`updateStatus(orderId, newStatus)` |指定注文のステータスを更新して localStorage に保存する
+|`calcSummary(orders)` |注文件数・合計金額・ステータス別件数を集計して返す
+|===
+
+---
+
+== 4. 使用上の共通ルール
+
+. 管理画面に表示する全文字列は `XSSProtectionAdmin.escape()` または `sanitizeInput()` を通す
+. 検索フォームの入力値は `sanitizeInput()` でサニタイズしてから処理する
+. 全角入力はフォーム送信時に `normalizeFullWidthAscii()` で正規化する
+. localStorage の直接操作は `AdminManager.loadOrders()` / `updateStatus()` 経由に統一する
