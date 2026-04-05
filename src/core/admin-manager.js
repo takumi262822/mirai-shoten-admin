@@ -34,12 +34,14 @@ export class AdminManager {
    */
   loadOrdersFromStorage() {
     try {
-      const data = localStorage.getItem(this.storageKey);
+      const data   = localStorage.getItem(this.storageKey);
       const parsed = data ? JSON.parse(data) : [];
+      // 平文 JSON だけでなく、旧フォーマットのデータも normalizeOrderRecord で吸索する
       this.orders = Array.isArray(parsed)
         ? parsed.map((order) => this.normalizeOrderRecord(order)).filter(Boolean)
         : [];
     } catch (e) {
+      // JSON.parse 失敗時は空配列にフォールバック。データ欺損より起動不能の方が困る
       console.warn(`[AdminManager] LocalStorage 読込失敗: ${e.message}`);
       this.orders = [];
     }
@@ -157,22 +159,21 @@ export class AdminManager {
    * @returns {{ success: boolean, orderId: string|null, message: string }}
    */
   addOrder(orderData) {
-    // バリデーション
     if (!OrderValidator.isValidOrderData(orderData)) {
       return { success: false, orderId: null, message: '入力値が不正です' };
     }
 
-    // サニタイズ
+    // 入力値は必ずサニタイズしてから DB に入れる
     const sanitized = {
       customerName: XSSProtectionAdmin.sanitizeInput(orderData.customerName),
-      email: XSSProtectionAdmin.sanitizeInput(orderData.email),
-      productCode: XSSProtectionAdmin.sanitizeInput(orderData.productCode).toUpperCase(),
-      quantity: Number(orderData.quantity),
-      totalPrice: Number(orderData.totalPrice),
-      status: orderData.status || AdminConstants.ORDER_STATUS.PENDING,
+      email:        XSSProtectionAdmin.sanitizeInput(orderData.email),
+      productCode:  XSSProtectionAdmin.sanitizeInput(orderData.productCode).toUpperCase(),
+      quantity:     Number(orderData.quantity),
+      totalPrice:   Number(orderData.totalPrice),
+      status:       orderData.status || AdminConstants.ORDER_STATUS.PENDING,
     };
 
-    // ID 自動生成
+    // Date.now() + 乱数で ID を作る。同時登録が起きても衝突しない程度の籏度
     const orderId = `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 
     const order = {
