@@ -1,0 +1,48 @@
+= 未来商店管理画面（mirai-shoten-admin）: 定数一覧
+:lang: ja
+:doctype: book
+:toc: left
+:toclevels: 5
+:toc-title: 目次
+:sectnums:
+:sectnumlevels: 5
+:sectlinks:
+:imagesdir: ./images
+:icons: font
+:source-highlighter: coderay
+:example-caption: 例
+:table-caption: 表
+:figure-caption: 図
+
+[#変更履歴, title="変更履歴", cols="1,2,3,3,3,3,3", options="header", align="center"]
+|===
+^.^|No. ^.^|版数 ^.^|変更者 <.^|作成日/変更日 <.^|仕変番号/障害番号 <.^|変更箇所 <.^|変更内容
+
+^.^|{counter:変更履歴} |1.00 |Takumi Harada |2026-04-04 ^.^|- ^.^|- |新規作成
+|===
+
+== 定数一覧
+
+[#定数一覧, title="定数一覧", cols="1,4,4,3,4,5", options="header", align="center"]
+|===
+^.^|No. ^.^|定数名（論理名） ^.^|定数名（物理名） ^.^|型 ^.^|設定値 ^.^|備考
+
+^.^|{counter:定数} <.^|顧客名最小文字数 <.^|AdminConstants.VALIDATION.MIN_CUSTOMER_NAME <.^|number <.^|1 <.^|顧客名の最小文字数
+^.^|{counter:定数} <.^|顧客名最大文字数 <.^|AdminConstants.VALIDATION.MAX_CUSTOMER_NAME <.^|number <.^|50 <.^|顧客名の最大文字数
+^.^|{counter:定数} <.^|注文数量最小値 <.^|AdminConstants.VALIDATION.MIN_QUANTITY <.^|number <.^|1 <.^|注文数量の最小値
+^.^|{counter:定数} <.^|注文数量最大値 <.^|AdminConstants.VALIDATION.MAX_QUANTITY <.^|number <.^|999 <.^|注文数量の最大値
+^.^|{counter:定数} <.^|合計金額最小値 <.^|AdminConstants.VALIDATION.MIN_PRICE <.^|number <.^|0 <.^|合計金額の最小値（0 円は許容）
+^.^|{counter:定数} <.^|合計金額最大値 <.^|AdminConstants.VALIDATION.MAX_PRICE <.^|number <.^|999999 <.^|合計金額の最大値
+^.^|{counter:定数} <.^|注文一覧ストレージキー <.^|AdminConstants.STORAGE_KEYS.ADMIN_ORDERS <.^|string <.^|"adminOrders" <.^|注文一覧を永続化する localStorage キー
+^.^|{counter:定数} <.^|カート共有ストレージキー <.^|AdminConstants.STORAGE_KEYS.FUTURE_SHOP_CART <.^|string <.^|"futureShopCart" <.^|未来商店商材のカートデータと共有する localStorage キー（読込専用）
+^.^|{counter:定数} <.^|注文追加通知メッセージ <.^|AdminConstants.UI_MESSAGES.ORDER_ADDED <.^|string <.^|注文を追加しました <.^|注文追加成功時の通知メッセージ
+^.^|{counter:定数} <.^|注文更新通知メッセージ <.^|AdminConstants.UI_MESSAGES.ORDER_UPDATED <.^|string <.^|注文を更新しました <.^|注文更新成功時の通知メッセージ
+^.^|{counter:定数} <.^|注文削除通知メッセージ <.^|AdminConstants.UI_MESSAGES.ORDER_DELETED <.^|string <.^|注文を削除しました <.^|注文削除成功時の通知メッセージ
+^.^|{counter:定数} <.^|メール検証エラーメッセージ <.^|AdminConstants.UI_MESSAGES.INVALID_EMAIL <.^|string <.^|有効なメールアドレスを入力してください <.^|メール検証エラー時のメッセージ
+^.^|{counter:定数} <.^|数量検証エラーメッセージ <.^|AdminConstants.UI_MESSAGES.INVALID_QUANTITY <.^|string <.^|数量は1〜999の整数です <.^|数量検証エラー時のメッセージ
+^.^|{counter:定数} <.^|ステータス検証エラーメッセージ <.^|AdminConstants.UI_MESSAGES.INVALID_STATUS <.^|string <.^|有効なステータスを選択してください <.^|ステータス検証エラー時のメッセージ
+^.^|{counter:定数} <.^|必須フィールドエラーメッセージ <.^|AdminConstants.UI_MESSAGES.REQUIRED_FIELD <.^|string <.^|この項目は必須です <.^|必須フィールド未入力時のメッセージ
+^.^|{counter:定数} <.^|削除確認メッセージ <.^|AdminConstants.UI_MESSAGES.CONFIRM_DELETE <.^|string <.^|本当に削除しますか？ <.^|削除確認ダイアログの表示文言
+^.^|{counter:定数} <.^|HTTPタイムアウト時間 <.^|AdminConstants.API.TIMEOUT_MS <.^|number <.^|5000 <.^|将来の HTTP リクエストタイムアウト時間 (ms)（現在は未使用）
+^.^|{counter:定数} <.^|HTTPリトライ上限回数 <.^|AdminConstants.API.RETRY_COUNT <.^|number <.^|3 <.^|将来のリトライ上限回数（現在は未使用）
+|===

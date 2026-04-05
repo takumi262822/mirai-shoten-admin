@@ -1,0 +1,195 @@
+= 機能設計書
+:project: mirai-shoten-admin
+:author: Takumi Harada
+:revdate: 2026-04-05
+:doctype: article
+:toc:
+:toc-title: 目次
+:sectnums:
+
+== 概要
+
+本書はプロジェクト「{project}」の主要クラス・メソッド・分岐ロジックを記述した技術設計書です。
+
+---
+
+== モジュール構成
+
+[cols="2,4", options="header"]
+|===
+|ファイルパス
+|担当責務
+
+|src/main.js
+|イベント登録・フォーム操作・ローカルイベント処理のエントリーポイント
+
+|src/core/admin-manager.js
+|localStorage を介した注文データの CRUD・検索・統計更新（シングルトン）
+
+|src/ui/admin-components.js
+|テーブル描画・通知表示・フォーム操作の UI ユーティリティ
+
+|src/styles/admin-style.js
+|テーマ切替・スクロールヘッダー・グローエフェクト・アニメーション制御
+
+|src/constants/admin-constants.js
+|ステータスコード・バリデーション規則・UI メッセージ・テーマ定数
+
+|src/utils/order-validator.js
+|注文フォームの全フィールド検証
+
+|src/utils/xss.js
+|エスケープ・サニタイズ・メール検証・範囲チェック
+
+|===
+
+---
+
+== クラス設計
+
+=== AdminManager（admin-manager.js）
+
+シングルトンパターンで実装。`AdminManager.getInstance()` 経由で利用する。
+
+[cols="2,1,4", options="header"]
+|===
+|メソッド
+|可視性
+|処理内容
+
+|constructor()
+|public
+|orders を空配列で初期化し loadOrdersFromStorage() を実行
+
+|getInstance()
+|static
+|_instance がなければ new AdminManager() を生成して返す
+
+|loadOrdersFromStorage()
+|private
+|localStorage から JSON をパースし normalizeOrderRecord() で整形後 this.orders に格納。失敗時は空配列にフォールバック
+
+|normalizeOrderRecord(rawOrder)
+|private
+|旧形式（customer/price/date キー）を含むデータを管理画面標準形式へ変換して返す。null または非オブジェクトの場合は null を返す
+
+|addOrder(orderData)
+|public
+|OrderValidator.isValidOrderData() で検証後、ID を生成して orders に追加し saveToStorage() を呼ぶ
+
+|updateOrder(id, orderData)
+|public
+|id 一致レコードを orderData で上書きし saveToStorage() を呼ぶ
+
+|deleteOrder(id)
+|public
+|id 一致レコードを orders から除去し saveToStorage() を呼ぶ
+
+|getOrderById(id)
+|public
+|orders から id 一致の注文を返す。見つからない場合は undefined を返す
+
+|saveToStorage()
+|private
+|this.orders を JSON.stringify して localStorage に保存する
+
+|getStats()
+|public
+|注文一覧から総注文数・総売上・ステータス集計を算出して返す
+
+|===
+
+=== AdminUIComponents（admin-components.js）
+
+[cols="2,1,4", options="header"]
+|===
+|メソッド
+|可視性
+|処理内容
+
+|renderOrderTable(orders, containerId)
+|static
+|注文配列を HTML テーブルに変換し containerId の要素に設定する。値は XSSProtectionAdmin.escape() でエスケープする
+
+|renderCustomerInfo(orders, containerId)
+|static
+|注文配列からメールをキーに顧客情報を集約し、顧客一覧テーブルを描画する
+
+|getStatusColor(status)
+|static
+|ステータス値を AdminConstants のカラーマップで解決して色コードを返す
+
+|showNotice(message, type)
+|static
+|type に応じた色のポップアップ通知を作成し 3 秒後に自動削除する
+
+|clearOrderForm(formId)
+|static
+|指定フォームの全入力値をリセットする
+
+|populateEditForm(order, formId)
+|static
+|注文データをフォームの各フィールドに書き込む（編集モード用）
+
+|===
+
+=== OrderValidator（order-validator.js）
+
+[cols="2,1,4", options="header"]
+|===
+|メソッド
+|可視性
+|処理内容
+
+|isValidOrderData(orderData)
+|static
+|全フィールドの個別検証を実行し、すべて valid なら true を返す
+
+|isValidCustomerName(name)
+|static
+|1〜50 文字の英数字・日本語・スペースで構成されているか検証する
+
+|isValidEmail(email)
+|static
+|XSSProtectionAdmin.isValidEmail() に委譲してメール形式を検証する
+
+|isValidProductCode(productCode)
+|static
+|1〜10 文字の英数字・ハイフンのみか検証する
+
+|isValidQuantity(quantity)
+|static
+|1〜999 の整数か検証する
+
+|isValidTotalPrice(totalPrice)
+|static
+|0〜999999 の有限数か検証する
+
+|isValidStatus(status)
+|static
+|AdminConstants.ORDER_STATUS の許可値に含まれているか検証する
+
+|===
+
+---
+
+== データ永続化フロー（localStorage）
+
+[source]
+----
+1. 未来商店商材で購入確定 → localStorage["futureShopCart"] に保存
+2. mirai-shoten-admin 起動 → loadOrdersFromStorage()
+   └─ localStorage["adminOrders"] から注文データを読み込む
+3. 注文追加・更新・削除 → saveToStorage()
+   └─ localStorage["adminOrders"] を更新
+4. ページ再読み込み → loadOrdersFromStorage() で復元
+----
+
+---
+
+== セキュリティ考慮事項
+
+* XSS: テーブルへの動的値出力は XSSProtectionAdmin.escape() 経由で innerHTML に設定
+* 入力検証: 全フォーム送信前に OrderValidator.isValidOrderData() で一括検証
+* localStorage: JSON.parse エラーは try-catch で補足し空配列へフォールバック
+* 旧データ互換: 未来商店商材の旧フォーマット（customer/price/date キー）は normalizeOrderRecord() で標準形式へ変換
