@@ -15,6 +15,7 @@ export class OrderValidator {
    * @returns {boolean} 全て有効なら true
    */
   static isValidOrderData(orderData) {
+    // nullまたはオブジェクト型以外の場合は即座に false を返す
     if (!orderData || typeof orderData !== 'object') {
       return false;
     }
@@ -34,11 +35,13 @@ export class OrderValidator {
    * @returns {{ valid: boolean, message: string }}
    */
   static isValidCustomerName(name) {
+    // 顧客名が空または文字型以外の場合は必須エラーを返す
     if (!name || typeof name !== 'string') {
       return { valid: false, message: AdminConstants.UI_MESSAGES.REQUIRED_FIELD };
     }
 
     const trimmed = name.trim();
+    // 顧客名が制限文字数（MIN～MAX）の範囲外の場合は長さエラーを返す
     if (trimmed.length < AdminConstants.VALIDATION.MIN_CUSTOMER_NAME ||
         trimmed.length > AdminConstants.VALIDATION.MAX_CUSTOMER_NAME) {
       return {
@@ -49,6 +52,7 @@ export class OrderValidator {
 
     // 有効文字: 英数字、日本語、スペース
     const validNameRegex = /^[a-zA-Z0-9\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff\s]*$/;
+    // 使用不可能な文字種が含まれる場合は文字種エラーを返す
     if (!validNameRegex.test(trimmed)) {
       return { valid: false, message: '顧客名に使用できない文字があります' };
     }
@@ -63,6 +67,7 @@ export class OrderValidator {
    * @returns {{ valid: boolean, message: string }}
    */
   static isValidEmail(email) {
+    // メールアドレスが空または文字型以外の場合は必須エラーを返す
     if (!email || typeof email !== 'string') {
       return { valid: false, message: AdminConstants.UI_MESSAGES.REQUIRED_FIELD };
     }
@@ -80,16 +85,19 @@ export class OrderValidator {
    * @returns {{ valid: boolean, message: string }}
    */
   static isValidProductCode(productCode) {
+    // 商品コードが空または文字型以外の場合は必須エラーを返す
     if (!productCode || typeof productCode !== 'string') {
       return { valid: false, message: AdminConstants.UI_MESSAGES.REQUIRED_FIELD };
     }
 
     const trimmed = productCode.trim().toUpperCase();
+    // 商品コードが制限文字数（1～10）の範囲外の場合は長さエラーを返す
     if (trimmed.length < 1 || trimmed.length > 10) {
       return { valid: false, message: '商品コードは1～10文字です' };
     }
 
     const codeRegex = /^[A-Z0-9-]*$/;
+    // 商品コードに英数字・ハイフン以外の文字が含まれる場合は文字種エラーを返す
     if (!codeRegex.test(trimmed)) {
       return { valid: false, message: '商品コードは英数字とハイフンのみです' };
     }
@@ -104,11 +112,13 @@ export class OrderValidator {
    * @returns {{ valid: boolean, message: string }}
    */
   static isValidQuantity(quantity) {
+    // 数量が null または空文字の場合は必須エラーを返す
     if (quantity === null || quantity === '') {
       return { valid: false, message: AdminConstants.UI_MESSAGES.REQUIRED_FIELD };
     }
 
     const num = Number(quantity);
+    // 数量が整数でない場合は型形式エラーを返す
     if (isNaN(num) || !Number.isInteger(num)) {
       return { valid: false, message: '数量は整数で入力してください' };
     }
@@ -116,6 +126,7 @@ export class OrderValidator {
     const min = AdminConstants.VALIDATION.MIN_QUANTITY;
     const max = AdminConstants.VALIDATION.MAX_QUANTITY;
 
+    // 数量が有効範囲（1～999）外の場合は範囲エラーを返す
     if (!XSSProtectionAdmin.isInRange(num, min, max)) {
       return {
         valid: false,
@@ -133,17 +144,20 @@ export class OrderValidator {
    * @returns {{ valid: boolean, message: string }}
    */
   static isValidTotalPrice(totalPrice) {
+    // 合計金額が null・空文字・ undefined の場合は必須エラーを返す
     if (totalPrice === null || totalPrice === '' || totalPrice === undefined) {
       return { valid: false, message: AdminConstants.UI_MESSAGES.REQUIRED_FIELD };
     }
 
     const price = Number(totalPrice);
+    // 合計金額が有限数値でない場合は数値形式エラーを返す
     if (!Number.isFinite(price)) {
       return { valid: false, message: '合計金額は数値で入力してください' };
     }
 
     const min = AdminConstants.VALIDATION.MIN_PRICE;
     const max = AdminConstants.VALIDATION.MAX_PRICE;
+    // 合計金額が有効範囲（0～999999）外の場合は範囲エラーを返す
     if (!XSSProtectionAdmin.isInRange(price, min, max)) {
       return { valid: false, message: `合計金額は${min}～${max}の範囲で入力してください` };
     }
@@ -158,6 +172,7 @@ export class OrderValidator {
    * @returns {{ valid: boolean, message: string }}
    */
   static isValidStatus(status) {
+    // ステータスが空または文字型以外の場合は必須エラーを返す
     if (!status || typeof status !== 'string') {
       return { valid: false, message: AdminConstants.UI_MESSAGES.REQUIRED_FIELD };
     }

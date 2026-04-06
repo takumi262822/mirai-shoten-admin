@@ -41,6 +41,7 @@ export class AdminStyleManager {
   /** カーソル位置を CSS 変数に反映するグローエフェクトを初期化する。 */
   applyResponsiveCSS() {
     const glow = document.getElementById('cursor-glow');
+    // カーソルグロー要素が DOM に存在しない場合はユーザーイベント登録をスキップする
     if (!glow) {
       return;
     }

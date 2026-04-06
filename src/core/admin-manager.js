@@ -21,6 +21,7 @@ export class AdminManager {
    * @returns {AdminManager}
    */
   static getInstance() {
+    // インスタンスが未生成の場合にのみ新規作成する（シングルトン保証）
     if (!AdminManager._instance) {
       AdminManager._instance = new AdminManager();
     }
@@ -54,6 +55,7 @@ export class AdminManager {
    * @returns {object|null} 標準化済み注文データ
    */
   normalizeOrderRecord(rawOrder) {
+    // nullまたはオブジェクト型以外の場合は正規化不能としてnullを返す
     if (!rawOrder || typeof rawOrder !== 'object') {
       return null;
     }
@@ -107,6 +109,7 @@ export class AdminManager {
    * @returns {number} 数値化された金額
    */
   normalizePrice(value) {
+    // 数値型かつ有限値の場合はそのまま使用する（不要な変換をスキップ）
     if (typeof value === 'number' && Number.isFinite(value)) {
       return value;
     }
@@ -159,6 +162,7 @@ export class AdminManager {
    * @returns {{ success: boolean, orderId: string|null, message: string }}
    */
   addOrder(orderData) {
+    // 入力値が不正な場合は失敗レスポンスを返す
     if (!OrderValidator.isValidOrderData(orderData)) {
       return { success: false, orderId: null, message: '入力値が不正です' };
     }
@@ -218,6 +222,7 @@ export class AdminManager {
    */
   editOrder(orderId, updates) {
     const orderIndex = this.orders.findIndex(o => o.id === orderId);
+    // 指定 ID の注文が見つからない場合は失敗レスポンスを返す
     if (orderIndex === -1) {
       return { success: false, message: '注文が見つかりません' };
     }
@@ -232,7 +237,7 @@ export class AdminManager {
       status: updates.status,
     };
 
-    // バリデーション
+    // 更新内容がバリデーションを通過しない場合は失敗レスポンスを返す
     if (!OrderValidator.isValidOrderData(updated)) {
       return { success: false, message: '更新内容が不正です' };
     }
@@ -251,6 +256,7 @@ export class AdminManager {
    */
   deleteOrder(orderId) {
     const orderIndex = this.orders.findIndex(o => o.id === orderId);
+    // 指定 ID の注文が見つからない場合は失敗レスポンスを返す
     if (orderIndex === -1) {
       return { success: false, message: '注文が見つかりません' };
     }
@@ -287,6 +293,7 @@ export class AdminManager {
 
     this.orders.forEach(order => {
       stats.totalRevenue += order.totalPrice || 0;
+      // 定義済みステータスに該当する場合のみステータス別カウントをインクリメントする
       if (stats.byStatus[order.status] !== undefined) {
         stats.byStatus[order.status]++;
       }

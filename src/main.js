@@ -50,6 +50,7 @@ function collectFormData() {
 
 function beginEdit(orderId) {
   const order = adminManager.getOrderById(orderId);
+  // 編集対象の注文が見つからない場合はエラー通知して処理を中断する
   if (!order) {
     AdminUIComponents.showNotice('編集対象の注文が見つかりません', 'error');
     return;
@@ -66,12 +67,14 @@ function attachTableEventListeners(updateDashboard) {
   document.querySelectorAll('.btn-delete').forEach((button) => {
     button.addEventListener('click', (event) => {
       const orderId = event.currentTarget.dataset.orderId;
+      // 削除確認ダイアログでキャンセルされた場合は処理を中断する
       if (!window.confirm(AdminConstants.UI_MESSAGES.CONFIRM_DELETE)) {
         return;
       }
 
       const result = adminManager.deleteOrder(orderId);
       AdminUIComponents.showNotice(result.message, result.success ? 'success' : 'error');
+      // 削除成功かつ削除対象が編集中だった場合はフォーム状態をリセットする
       if (result.success && editingOrderId === orderId) {
         resetFormState();
       }
@@ -108,6 +111,7 @@ function handleFormSubmit(event) {
     ? adminManager.editOrder(editingOrderId, formData)
     : adminManager.addOrder(formData);
 
+  // バリデーションが失敗した場合はエラー通知を表示して剆断する
   if (!result.success) {
     AdminUIComponents.showNotice(result.message || '入力値を確認してください', 'error');
     return;

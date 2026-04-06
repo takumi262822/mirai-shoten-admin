@@ -10,6 +10,7 @@ export class XSSProtectionAdmin {
    * @returns {string}
    */
   static escape(str) {
+    // 文字列以外が渡された場合は安全のため空文字を返す
     if (typeof str !== 'string') return '';
     return str
       .replace(/&/g, '&amp;')
@@ -25,6 +26,7 @@ export class XSSProtectionAdmin {
    * @returns {string}
    */
   static sanitizeInput(input) {
+    // null・空文字・文字型以外が渡された場合は空文字を返す
     if (!input || typeof input !== 'string') return '';
 
     const normalized = input.trim();
@@ -32,6 +34,7 @@ export class XSSProtectionAdmin {
     const hasJavascriptProtocol = /javascript\s*:/i.test(normalized);
     const hasInlineHandler = /on\w+\s*=/i.test(normalized);
 
+    // XSS 攻撃パターン（scriptタグ・ JavaScriptプロトコル・インラインハンドラ）が検出された場合は空文字を返す
     if (hasScriptTag || hasJavascriptProtocol || hasInlineHandler) {
       return '';
     }
@@ -47,6 +50,7 @@ export class XSSProtectionAdmin {
    * @returns {string} 半角に統一された文字列
    */
   static normalizeFullWidthAscii(str) {
+    // null・空文字・文字型以外が渡された場合は空文字を返す
     if (!str || typeof str !== 'string') return '';
 
     // 全角英数字を半角に
@@ -63,6 +67,7 @@ export class XSSProtectionAdmin {
    * @returns {boolean} 有効な形式なら true
    */
   static isValidEmail(email) {
+    // null・空文字・文字型以外の場合は即座に false を返す
     if (!email || typeof email !== 'string') return false;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);

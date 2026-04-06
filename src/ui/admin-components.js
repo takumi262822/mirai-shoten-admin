@@ -22,11 +22,13 @@ export class AdminUIComponents {
    */
   static renderOrderTable(orders, containerId) {
     const container = document.getElementById(containerId);
+    // 描画先コンテナが DOM に存在しない場合はテーブル描画をスキップする
     if (!container) {
       console.error(`[AdminUIComponents] コンテナ "${containerId}" が見つかりません`);
       return;
     }
 
+    // 注文配列が空の場合は空状態メッセージを表示する
     if (!orders || orders.length === 0) {
       container.innerHTML = '<p class="empty-state">注文がありません</p>';
       return;
@@ -146,6 +148,7 @@ export class AdminUIComponents {
    */
   static clearOrderForm(formId) {
     const form = document.getElementById(formId);
+    // フォーム要素が DOM に存在する場合のみリセットする
     if (form) {
       form.reset();
     }
@@ -159,11 +162,13 @@ export class AdminUIComponents {
    */
   static populateEditForm(order, formId) {
     const form = document.getElementById(formId);
+    // 対象フォームが DOM に存在しない場合は項目設定をスキップする
     if (!form) {
       console.error(`[AdminUIComponents] フォーム "${formId}" が見つかりません`);
       return;
     }
 
+    // 各入力項目が DOM に存在する場合のみ値を設定する（存在しない項目はスキップ）
     if (form.customerName) form.customerName.value = order.customerName || '';
     if (form.email) form.email.value = order.email || '';
     if (form.productCode) form.productCode.value = order.productCode || '';
@@ -180,6 +185,7 @@ export class AdminUIComponents {
    */
   static renderCustomerInfo(orders, containerId) {
     const container = document.getElementById(containerId);
+    // 描画先コンテナが DOM に存在しない場合はテーブル描画をスキップする
     if (!container) {
       return;
     }
@@ -187,6 +193,7 @@ export class AdminUIComponents {
     // メールをキーにして顧客情報を集約
     const customerMap = new Map();
     orders.forEach(order => {
+      // 同じメールアドレスの顧客が未登録の場合は新規顧客として登録する
       if (!customerMap.has(order.email)) {
         customerMap.set(order.email, {
           name: order.customerName,
