@@ -65,7 +65,7 @@ export class AdminUIComponents {
           <td class="cell-number">¥${order.totalPrice.toLocaleString()}</td>
           <td class="cell-center">
             <span class="status-badge" style="background-color: ${statusColor};">
-              ${order.status}
+              ${this.getStatusLabel(order.status)}
             </span>
           </td>
           <td class="cell-center">
@@ -84,6 +84,17 @@ export class AdminUIComponents {
     `;
 
     container.innerHTML = html;
+  }
+
+  static getStatusLabel(status) {
+    const labelMap = {
+      pending: '受付中',
+      processing: '処理中',
+      shipped: '発送済み',
+      delivered: '配達完了',
+      cancelled: 'キャンセル',
+    };
+    return labelMap[status] || status;
   }
 
   /**
