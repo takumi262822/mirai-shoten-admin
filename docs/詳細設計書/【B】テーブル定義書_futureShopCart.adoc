@@ -1,0 +1,95 @@
+= 未来商店管理画面: テーブル定義書 — futureShopCart
+:lang: ja
+:doctype: book
+:toc: left
+:toclevels: 5
+:toc-title: 目次
+:sectnums:
+:sectnumlevels: 5
+:sectlinks:
+:imagesdir: ./images
+:icons: font
+:source-highlighter: coderay
+:example-caption: 例
+:table-caption: 表
+:figure-caption: 図
+
+[#変更履歴, title="変更履歴", cols="1,2,3,3,3,3", options="header", align="center"]
+|===
+^.^|No. ^.^|版数 ^.^|変更者 <.^|作成日/変更日 <.^|変更箇所 <.^|変更内容
+
+^.^|{counter:変更履歴} |1.00 |Takumi Harada |2026/4/6 <.^|- |新規作成
+|===
+
+== テーブル基本情報
+
+[#テーブル基本情報, title="テーブル基本情報", cols="2,5", options="header", align="center"]
+|===
+^.^|項目 ^.^|内容
+
+<.^|テーブルID（物理名） <.^|futureShopCart
+<.^|テーブル名（論理名） <.^|カートデータテーブル
+<.^|保存先 <.^|localStorage
+<.^|保存形式 <.^|JSON 配列（Array<Object>）
+<.^|保存キー <.^|`futureShopCart`
+<.^|用途 <.^|未来商店サイトでお客様がカートに追加した商品を一時保持する。購入画面への引き渡しおよび管理画面（adminOrders）への注文変換に使用する
+<.^|書込み側 <.^|未来商店サイト（`mirai-shoten-admin` リポジトリのカート機能）
+<.^|読込み側 <.^|管理画面（`mirai-shoten-admin`）の注文変換処理
+|===
+
+== カラム定義
+
+[#カラム定義, title="カラム定義", cols="1,3,3,2,1,1,3,4", options="header", align="center"]
+|===
+^.^|No. ^.^|カラム名（論理名） ^.^|カラム名（物理名） ^.^|型 ^.^|必須 ^.^|主キー ^.^|デフォルト値 ^.^|備考
+
+^.^|{counter:カラム} <.^|商品ID <.^|id <.^|string <.^|○ <.^|疑似PK <.^|- <.^|`CodeDefinitions.productsByPage` で定義された値のいずれか（下記「商品ID定義」参照）。同一 id がカートに存在する場合は新規追加せず数量を加算する
+^.^|{counter:カラム} <.^|商品名 <.^|name <.^|string <.^|○ <.^|- <.^|- <.^|未来商店の商品名（例: `'ほっこり陶器マグ'`）。`CodeDefinitions` から取得した値をそのまま保存する
+^.^|{counter:カラム} <.^|単価 <.^|price <.^|number <.^|○ <.^|- <.^|- <.^|円単位の整数（例: `1800`）。合計金額 = `price × quantity` で算出する
+^.^|{counter:カラム} <.^|商品画像 <.^|image <.^|string <.^|○ <.^|- <.^|- <.^|商品を表す絵文字文字列（例: `'☕'`）。カート画面での商品アイコン表示に使用する
+^.^|{counter:カラム} <.^|数量 <.^|quantity <.^|number <.^|○ <.^|- <.^|- <.^|1 以上の整数。`CartService.normalizeQuantity()` で正規化する（NaN・0以下は `1` に補正）。同一商品の追加時は既存数量に加算する
+|===
+
+== 商品ID定義
+
+[#商品ID定義, title="商品ID定義", cols="2,3,2,2,3", options="header", align="center"]
+|===
+^.^|商品ID（物理名） ^.^|商品名（論理名） ^.^|単価 ^.^|画像 ^.^|対応ページ
+
+<.^|`mag_01` <.^|ほっこり陶器マグ <.^|1,800円 <.^|☕ <.^|hokkori-mug.html
+<.^|`candle_01` <.^|アロマキャンドル <.^|2,400円 <.^|🕯️ <.^|aroma-candle.html
+<.^|`linen_01` <.^|オーガニックリネン <.^|1,200円 <.^|🌿 <.^|organic-linen.html
+|===
+
+== 操作仕様
+
+[#操作仕様, title="操作仕様", cols="2,5", options="header", align="center"]
+|===
+^.^|操作 ^.^|仕様
+
+<.^|カートへの追加 <.^|`localStorage.getItem('futureShopCart')` を取得し JSON.parse する。既存レコードに同一 `id` があれば `quantity` を加算。なければ商品オブジェクトを `push` して保存する
+<.^|合計金額の計算 <.^|`CartService.calculateTotal(cart)` で計算する。`price × quantity` の総和を返す
+<.^|カートクリア <.^|購入完了後に `localStorage.removeItem('futureShopCart')` でカートを空にする
+|===
+
+== データサンプル
+
+[source,json]
+----
+[
+  {
+    "id": "mag_01",
+    "name": "ほっこり陶器マグ",
+    "price": 1800,
+    "image": "☕",
+    "quantity": 2
+  },
+  {
+    "id": "candle_01",
+    "name": "アロマキャンドル",
+    "price": 2400,
+    "image": "🕯️",
+    "quantity": 1
+  }
+]
+----

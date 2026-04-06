@@ -1,0 +1,103 @@
+= 未来商店管理画面: テーブル定義書 — adminOrders
+:lang: ja
+:doctype: book
+:toc: left
+:toclevels: 5
+:toc-title: 目次
+:sectnums:
+:sectnumlevels: 5
+:sectlinks:
+:imagesdir: ./images
+:icons: font
+:source-highlighter: coderay
+:example-caption: 例
+:table-caption: 表
+:figure-caption: 図
+
+[#変更履歴, title="変更履歴", cols="1,2,3,3,3,3", options="header", align="center"]
+|===
+^.^|No. ^.^|版数 ^.^|変更者 <.^|作成日/変更日 <.^|変更箇所 <.^|変更内容
+
+^.^|{counter:変更履歴} |1.00 |Takumi Harada |2026/4/6 <.^|- |新規作成
+|===
+
+== テーブル基本情報
+
+[#テーブル基本情報, title="テーブル基本情報", cols="2,5", options="header", align="center"]
+|===
+^.^|項目 ^.^|内容
+
+<.^|テーブルID（物理名） <.^|adminOrders
+<.^|テーブル名（論理名） <.^|注文データテーブル
+<.^|保存先 <.^|localStorage
+<.^|保存形式 <.^|JSON 配列（Array<Object>）
+<.^|保存キー <.^|`adminOrders`
+<.^|用途 <.^|未来商店の購入注文を一元管理する。管理画面での注文一覧表示・ステータス更新・検索・統計集計に使用する
+<.^|主な操作クラス <.^|`AdminManager`（シングルトン。CRUD・検索・統計・正規化を担当）
+|===
+
+== カラム定義
+
+[#カラム定義, title="カラム定義", cols="1,3,3,2,1,1,3,4", options="header", align="center"]
+|===
+^.^|No. ^.^|カラム名（論理名） ^.^|カラム名（物理名） ^.^|型 ^.^|必須 ^.^|主キー ^.^|デフォルト値 ^.^|備考
+
+^.^|{counter:カラム} <.^|注文ID <.^|id <.^|string <.^|○ <.^|PK <.^|- <.^|`ORD-$\{Date.now()}-$\{Math.random().toString(36).slice(2,8)}` 形式で自動採番。旧形式データも `normalizeOrderRecord` で正規化する
+^.^|{counter:カラム} <.^|顧客名 <.^|customerName <.^|string <.^|○ <.^|- <.^|`'未設定'` <.^|1〜50 文字。使用可能文字: 英数字・日本語（ひらがな・カタカナ・漢字）・スペース。XSS サニタイズ済みで保存
+^.^|{counter:カラム} <.^|メールアドレス <.^|email <.^|string <.^|○ <.^|- <.^|`'未設定'` <.^|RFC 準拠の形式チェックあり。全角ASCII は半角に正規化して保存。XSS サニタイズ済み
+^.^|{counter:カラム} <.^|商品コード <.^|productCode <.^|string <.^|○ <.^|- <.^|`'UNSPECIFIED'` <.^|大文字変換済みで保存（`toUpperCase()`）。旧形式の `items` キーも吸収する
+^.^|{counter:カラム} <.^|数量 <.^|quantity <.^|number <.^|○ <.^|- <.^|`1` <.^|1〜999 の整数。不正値（NaN・0以下）は `1` にフォールバック
+^.^|{counter:カラム} <.^|合計金額 <.^|totalPrice <.^|number <.^|○ <.^|- <.^|`0` <.^|0以上の数値。カンマ等の非数値文字を除去してから変換する。不正値は `0` にフォールバック
+^.^|{counter:カラム} <.^|注文ステータス <.^|status <.^|string <.^|○ <.^|- <.^|`'pending'` <.^|`AdminConstants.ORDER_STATUS` で定義された5値のいずれか（下記「ステータス定義」参照）。不正値は `'pending'` にフォールバック
+^.^|{counter:カラム} <.^|作成日時 <.^|createdAt <.^|string <.^|○ <.^|- <.^|- <.^|ISO 8601 形式（例: `2026-04-06T09:00:00.000Z`）。旧形式の `date` キーも吸収して正規化する
+^.^|{counter:カラム} <.^|更新日時 <.^|updatedAt <.^|string <.^|○ <.^|- <.^|- <.^|ISO 8601 形式。ステータス変更・内容更新のたびに `new Date().toISOString()` で上書きする
+|===
+
+== ステータス定義
+
+[#ステータス定義, title="ステータス定義", cols="2,3,3,4", options="header", align="center"]
+|===
+^.^|コード（物理値） ^.^|表示名（論理名） ^.^|旧形式マッピング ^.^|説明
+
+<.^|`pending` <.^|受付中 <.^|`'受付中'` <.^|注文受付直後の初期ステータス
+<.^|`processing` <.^|準備中 <.^|`'準備中'`、`'処理中'` <.^|出荷準備・商品ピッキング中
+<.^|`shipped` <.^|発送済み <.^|`'発送済み'` <.^|集荷済みで配送中
+<.^|`delivered` <.^|配達完了 <.^|`'配達完了'` <.^|お客様へ届いた状態
+<.^|`cancelled` <.^|キャンセル <.^|`'キャンセル'` <.^|注文取消し済み
+|===
+
+== バリデーション制約
+
+`OrderValidator.isValidOrderData(orderData)` で一括検証する。
+
+[#バリデーション制約, title="バリデーション制約", cols="2,3,3,4", options="header", align="center"]
+|===
+^.^|カラム名（物理名） ^.^|制約種別 ^.^|制約内容 ^.^|エラーメッセージ定数
+
+<.^|customerName <.^|必須チェック <.^|空文字・null・undefined を不可 <.^|`REQUIRED_FIELD`
+<.^|customerName <.^|長さチェック <.^|1〜50 文字（`MIN_CUSTOMER_NAME` 〜 `MAX_CUSTOMER_NAME`） <.^|`顧客名は1〜50文字です`
+<.^|customerName <.^|文字種チェック <.^|英数字・日本語・スペースのみ（`/^[a-zA-Z0-9\u3040-\u9fff\s]*$/`） <.^|`顧客名に使用できない文字があります`
+<.^|email <.^|形式チェック <.^|RFC 準拠の正規表現でチェック <.^|`INVALID_EMAIL`
+<.^|quantity <.^|範囲チェック <.^|1〜999 の整数（`MIN_QUANTITY` 〜 `MAX_QUANTITY`） <.^|`INVALID_QUANTITY`
+<.^|totalPrice <.^|範囲チェック <.^|0〜999999 の数値（`MIN_PRICE` 〜 `MAX_PRICE`） <.^|-
+<.^|status <.^|列挙値チェック <.^|`AdminConstants.ORDER_STATUS` の5値のいずれか <.^|`INVALID_STATUS`
+|===
+
+== データサンプル
+
+[source,json]
+----
+[
+  {
+    "id": "ORD-1743921600000-abc123",
+    "customerName": "原田 拓海",
+    "email": "takumi@example.com",
+    "productCode": "MAG_01",
+    "quantity": 2,
+    "totalPrice": 3600,
+    "status": "shipped",
+    "createdAt": "2026-04-06T09:00:00.000Z",
+    "updatedAt": "2026-04-06T12:00:00.000Z"
+  }
+]
+----
