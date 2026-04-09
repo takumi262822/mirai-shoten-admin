@@ -249,9 +249,18 @@ export class AdminManager {
       status: updates.status,
     };
 
-    // 更新内容がバリデーションを通過しない場合は失敗レスポンスを返す
-    if (!OrderValidator.isValidOrderData(updated)) {
-      return { success: false, message: '更新内容が不正です' };
+    // フィールド別バリデーション（最初のエラーメッセージをそのまま返す）
+    const editChecks = [
+      OrderValidator.isValidCustomerName(updated.customerName),
+      OrderValidator.isValidEmail(updated.email),
+      OrderValidator.isValidProductCode(updated.productCode),
+      OrderValidator.isValidQuantity(updated.quantity),
+      OrderValidator.isValidTotalPrice(updated.totalPrice),
+      OrderValidator.isValidStatus(updated.status),
+    ];
+    const editError = editChecks.find(r => !r.valid);
+    if (editError) {
+      return { success: false, message: editError.message };
     }
 
     updated.updatedAt = new Date().toISOString();
