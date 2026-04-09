@@ -162,9 +162,21 @@ export class AdminManager {
    * @returns {{ success: boolean, orderId: string|null, message: string }}
    */
   addOrder(orderData) {
-    // 入力値が不正な場合は失敗レスポンスを返す
-    if (!OrderValidator.isValidOrderData(orderData)) {
+    // フィールド別バリデーション（最初のエラーメッセージをそのまま返す）
+    if (!orderData || typeof orderData !== 'object') {
       return { success: false, orderId: null, message: '入力値が不正です' };
+    }
+    const fieldChecks = [
+      OrderValidator.isValidCustomerName(orderData.customerName),
+      OrderValidator.isValidEmail(orderData.email),
+      OrderValidator.isValidProductCode(orderData.productCode),
+      OrderValidator.isValidQuantity(orderData.quantity),
+      OrderValidator.isValidTotalPrice(orderData.totalPrice),
+      OrderValidator.isValidStatus(orderData.status),
+    ];
+    const firstError = fieldChecks.find(r => !r.valid);
+    if (firstError) {
+      return { success: false, orderId: null, message: firstError.message };
     }
 
     // 入力値は必ずサニタイズしてから DB に入れる
