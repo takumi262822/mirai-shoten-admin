@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { AdminConstants } from '../constants/admin-constants.js';
-import { OrderValidator } from './order-validator.js';
+import { AdminConstants } from '../src/constants/admin-constants.js';
+import { OrderValidator } from '../src/utils/order-validator.js';
 
 // メールアドレス検証が正常値と異常値を判定できるかを確認する。
 test('メールアドレス検証が正常値と異常値を判定できること', () => {

@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { AdminConstants } from '../constants/admin-constants.js';
-import { AdminManager } from './admin-manager.js';
+import { AdminConstants } from '../src/constants/admin-constants.js';
+import { AdminManager } from '../src/core/admin-manager.js';
 
 function createLocalStorageMock(initialValue = null) {
   const store = new Map();

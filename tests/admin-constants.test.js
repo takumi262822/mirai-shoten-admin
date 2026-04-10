@@ -1,10 +1,10 @@
 /**
  * AdminConstants ユニットテスト
- * @file src/constants/admin-constants.test.js
+ * @file tests/admin-constants.test.js
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { AdminConstants } from './admin-constants.js';
+import { AdminConstants } from '../src/constants/admin-constants.js';
 
 // 管理画面で利用する主要な定数グループが公開されているかを確認する。
 test('管理画面で利用する主要な定数グループが定義されていること', () => {

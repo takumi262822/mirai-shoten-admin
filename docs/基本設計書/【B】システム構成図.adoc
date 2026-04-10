@@ -1,0 +1,196 @@
+= システム構成図
+:project: mirai-shoten-admin
+:author: Takumi Harada
+:revdate: 2026-04-10
+:doctype: article
+:toc:
+:toc-title: 目次
+:sectnums:
+
+== 変更履歴
+
+[cols="1,2,3,3,3,3", options="header", align="center"]
+|===
+^.^|No. ^.^|版数 ^.^|変更者 <.^|作成日/変更日 <.^|変更箇所 <.^|変更内容
+
+^.^|1 |1.00 |Takumi Harada |2026/4/10 <.^|- <.^|新規作成（フルスタック再構築版）
+|===
+
+== 概要
+
+本書はプロジェクト「{project}」のシステム構成を記述した設計書です。
+React + TypeScript（フロントエンド）/ Node.js + Express（バックエンド API）/ Supabase（PostgreSQL）の三層構成で構築します。
+
+---
+
+== システム構成図
+
+[source,mermaid]
+....
+graph TD
+  Browser["ブラウザ\nReact + TypeScript"]
+  Vercel["Vercel\nフロントエンドホスティング"]
+  Render["Render\nバックエンド APIサーバー\nNode.js + Express + TypeScript"]
+  Supabase["Supabase\nPostgreSQL データベース"]
+
+  Browser -->|HTTPS| Vercel
+  Browser -->|REST API HTTPS + Bearer JWT| Render
+  Render -->|PostgreSQL 接続| Supabase
+....
+
+---
+
+== 構成要素一覧
+
+[cols="2,3,5", options="header"]
+|===
+|レイヤー |使用技術・サービス |役割
+
+|フロントエンド
+|React 18 + TypeScript + Vite
+|管理ダッシュボード UI の描画・クライアントルーティング・REST API 呼び出し
+
+|フロントエンドホスティング
+|Vercel（無料プラン）
+|静的ファイル配信・HTTPS 終端・CI/CD デプロイ自動化
+
+|バックエンド API
+|Node.js 20 + Express 4 + TypeScript
+|REST API 提供・JWT 認証検証・Supabase へのデータアクセス制御
+
+|バックエンドホスティング
+|Render（無料プラン）
+|Express サーバーのコンテナデプロイ・HTTPS 終端
+
+|データベース
+|Supabase（PostgreSQL 15 互換）
+|注文データ・注文明細・管理者ユーザーの永続化
+
+|認証
+|JWT（jsonwebtoken + bcrypt）
+|ログイン後のトークン発行・API リクエスト毎の署名検証
+
+|===
+
+---
+
+== 通信フロー
+
+=== ログイン処理
+
+[source,mermaid]
+....
+sequenceDiagram
+  participant C as ブラウザ (React)
+  participant A as Express API
+  participant D as Supabase DB
+
+  C->>A: POST /api/auth/login { email, password }
+  A->>D: SELECT id, password_hash FROM users WHERE email = ?
+  D-->>A: ユーザーレコード
+  A->>A: bcrypt.compare(password, hash)
+  A-->>C: 200 OK { token: "eyJ..." }
+  C->>C: localStorage.setItem("token", ...)
+....
+
+=== 認証が必要なリクエスト（注文一覧取得を例に）
+
+[source,mermaid]
+....
+sequenceDiagram
+  participant C as ブラウザ (React)
+  participant A as Express API
+  participant D as Supabase DB
+
+  C->>A: GET /api/orders (Authorization: Bearer <token>)
+  A->>A: jwt.verify(token, JWT_SECRET)
+  A->>D: SELECT orders JOIN order_items
+  D-->>A: レコード配列
+  A-->>C: 200 OK { orders: [...] }
+....
+
+=== トークン失効時
+
+[source,mermaid]
+....
+sequenceDiagram
+  participant C as ブラウザ (React)
+  participant A as Express API
+
+  C->>A: GET /api/orders (期限切れ JWT)
+  A->>A: jwt.verify() → TokenExpiredError
+  A-->>C: 401 Unauthorized { error: "Token expired" }
+  C->>C: localStorage.removeItem("token") → /login へリダイレクト
+....
+
+---
+
+== 環境変数
+
+=== バックエンド（.env）
+
+[cols="2,1,5", options="header"]
+|===
+|変数名 |必須 |説明
+
+|`DATABASE_URL`
+|必須
+|Supabase の PostgreSQL 接続文字列
+
+|`JWT_SECRET`
+|必須
+|JWT 署名に使う秘密鍵（32文字以上推奨）
+
+|`JWT_EXPIRES_IN`
+|任意
+|JWT 有効期限（例: `8h`）。デフォルト `8h`
+
+|`PORT`
+|任意
+|サーバーのリスニングポート。デフォルト `3000`
+
+|`CORS_ORIGIN`
+|必須
+|フロントエンドの URL（例: `https://your-app.vercel.app`）
+
+|===
+
+=== フロントエンド（.env）
+
+[cols="2,1,5", options="header"]
+|===
+|変数名 |必須 |説明
+
+|`VITE_API_URL`
+|必須
+|バックエンド API のベース URL（例: `https://your-api.onrender.com`）
+
+|===
+
+---
+
+== セキュリティ方針
+
+[cols="2,5", options="header"]
+|===
+|対策項目 |実装内容
+
+|XSS
+|フロントエンドで `escapeHtml()` 適用。React の JSX は基本的にエスケープ済み。
+
+|SQL インジェクション
+|Supabase クライアントのパラメータバインドを使用（生クエリ直接連結は禁止）
+
+|認証バイパス
+|全プロテクトルートに `authMiddleware` を適用。JWT 検証失敗時は 401 を返す
+
+|パスワード保存
+|bcrypt（salt rounds 12）でハッシュ化して保存。平文保存は禁止
+
+|CORS
+|`CORS_ORIGIN` 環境変数に登録した URL のみ許可。`*` は使用しない
+
+|レートリミット
+|ログインエンドポイントに `express-rate-limit` 適用（例: 10回/15分）
+
+|===

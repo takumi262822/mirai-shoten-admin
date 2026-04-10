@@ -1,0 +1,86 @@
+= テーブル定義書 — order_items
+:project: mirai-shoten-admin
+:author: Takumi Harada
+:revdate: 2026-04-10
+:doctype: article
+:toc:
+:toc-title: 目次
+:sectnums:
+
+== 変更履歴
+
+[cols="1,2,3,3,3,3", options="header", align="center"]
+|===
+^.^|No. ^.^|版数 ^.^|変更者 <.^|作成日/変更日 <.^|変更箇所 <.^|変更内容
+
+^.^|1 |1.00 |Takumi Harada |2026/4/10 <.^|- <.^|新規作成
+|===
+
+== テーブル基本情報
+
+[cols="2,5", options="header", align="center"]
+|===
+^.^|項目 ^.^|内容
+
+<.^|テーブル名（物理名） <.^|`order_items`
+<.^|テーブル名（論理名） <.^|注文明細
+<.^|データベース <.^|Supabase（PostgreSQL 15 互換）
+<.^|用途 <.^|注文に含まれる商品ごとの明細を管理する
+<.^|関連テーブル <.^|`orders`（多対1）
+|===
+
+== カラム定義
+
+[cols="1,3,3,3,2,1,4", options="header", align="center"]
+|===
+^.^|No. ^.^|カラム名（論理名） ^.^|カラム名（物理名） ^.^|型 ^.^|制約 ^.^|PK ^.^|備考
+
+^.^|1 <.^|明細ID <.^|`id` <.^|UUID <.^|PRIMARY KEY <.^|PK <.^|`gen_random_uuid()` で自動生成
+^.^|2 <.^|注文ID <.^|`order_id` <.^|UUID <.^|NOT NULL, FK <.^|- <.^|`orders(id)` への外部キー。親注文削除時に CASCADE 削除
+^.^|3 <.^|商品コード <.^|`product_code` <.^|VARCHAR(50) <.^|NOT NULL <.^|- <.^|例: `MRS-001`。大文字アルファベット・数字・ハイフンで構成
+^.^|4 <.^|商品名 <.^|`product_name` <.^|VARCHAR(200) <.^|NOT NULL <.^|- <.^|例: `ほっこり陶器マグ`
+^.^|5 <.^|数量 <.^|`quantity` <.^|INTEGER <.^|NOT NULL, CHECK <.^|- <.^|1〜999 の整数。DEFAULT: 1
+^.^|6 <.^|単価 <.^|`unit_price` <.^|INTEGER <.^|NOT NULL, CHECK <.^|- <.^|円単位。0 以上の整数
+|===
+
+== 制約一覧
+
+[cols="3,4", options="header", align="center"]
+|===
+^.^|制約種別 ^.^|内容
+
+<.^|外部キー <.^|`order_id REFERENCES orders(id) ON DELETE CASCADE`
+<.^|CHECK: quantity <.^|`quantity >= 1 AND quantity <= 999`
+<.^|CHECK: unit_price <.^|`unit_price >= 0`
+|===
+
+== DDL
+
+[source,sql]
+----
+CREATE TABLE order_items (
+  id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id     UUID         NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  product_code VARCHAR(50)  NOT NULL,
+  product_name VARCHAR(200) NOT NULL,
+  quantity     INTEGER      NOT NULL DEFAULT 1 CHECK (quantity >= 1 AND quantity <= 999),
+  unit_price   INTEGER      NOT NULL DEFAULT 0 CHECK (unit_price >= 0)
+);
+
+-- 注文ID での検索を高速化するインデックス
+CREATE INDEX order_items_order_id_idx ON order_items (order_id);
+----
+
+== データサンプル
+
+[source,json]
+----
+{
+  "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+  "order_id": "550e8400-e29b-41d4-a716-446655440000",
+  "product_code": "MRS-001",
+  "product_name": "ほっこり陶器マグ",
+  "quantity": 2,
+  "unit_price": 1800
+}
+----

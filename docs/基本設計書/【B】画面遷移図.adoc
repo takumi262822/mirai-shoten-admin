@@ -1,0 +1,139 @@
+= 画面遷移図
+:project: mirai-shoten-admin
+:author: Takumi Harada
+:revdate: 2026-04-10
+:doctype: article
+:toc:
+:toc-title: 目次
+:sectnums:
+
+== 変更履歴
+
+[cols="1,2,3,3,3,3", options="header", align="center"]
+|===
+^.^|No. ^.^|版数 ^.^|変更者 <.^|作成日/変更日 <.^|変更箇所 <.^|変更内容
+
+^.^|1 |1.00 |Takumi Harada |2026/4/10 <.^|- <.^|新規作成
+|===
+
+== 概要
+
+本書はプロジェクト「{project}」の画面間の遷移フローを記述した設計書です。
+
+---
+
+== 画面遷移図
+
+[source,mermaid]
+....
+flowchart TD
+  Start(["アプリ起動 /"])
+
+  subgraph 認証不要
+    Login["/login\nログイン画面"]
+  end
+
+  subgraph 認証必要
+    Dashboard["/dashboard\nダッシュボード"]
+    OrderList["/orders\n注文一覧"]
+    OrderNew["/orders/new\n注文追加"]
+    OrderDetail["/orders/:id\n注文詳細・編集"]
+    CustomerList["/customers\n顧客一覧"]
+  end
+
+  NotFound["404\nページが見つかりません"]
+
+  Start -->|JWT なし または 無効| Login
+  Start -->|JWT 有効| Dashboard
+
+  Login -->|ログイン成功| Dashboard
+  Login -->|ログイン失敗| Login
+
+  Dashboard -->|ナビ: 注文一覧| OrderList
+  Dashboard -->|ナビ: 顧客一覧| CustomerList
+  Dashboard -->|ナビ: 注文追加| OrderNew
+  Dashboard -->|ナビ: ログアウト| Login
+
+  OrderList -->|詳細・編集ボタン| OrderDetail
+  OrderList -->|注文追加ボタン| OrderNew
+  OrderList -->|削除成功| OrderList
+  OrderList -->|ナビ: ダッシュボード| Dashboard
+
+  OrderNew -->|追加成功| OrderList
+  OrderNew -->|キャンセル| OrderList
+
+  OrderDetail -->|更新成功| OrderDetail
+  OrderDetail -->|削除成功| OrderList
+  OrderDetail -->|戻るボタン| OrderList
+
+  CustomerList -->|ナビ: ダッシュボード| Dashboard
+
+  Start -->|存在しないルート| NotFound
+  NotFound -->|トップへ戻るリンク| Dashboard
+....
+
+---
+
+== 遷移条件の補足
+
+[cols="2,3,5", options="header"]
+|===
+|遷移元 |遷移先 |条件
+
+|アプリ起動（`/`）
+|`/login`
+|localStorage に JWT がない、または JWT 検証が失敗した場合
+
+|アプリ起動（`/`）
+|`/dashboard`
+|localStorage の JWT が有効な場合
+
+|`/login`
+|`/dashboard`
+|`POST /api/auth/login` が `200 OK` を返した場合
+
+|`/login`
+|`/login`（変化なし）
+|`POST /api/auth/login` が `401` を返した場合。エラーメッセージを表示
+
+|任意の認証必要画面
+|`/login`
+|API から `401 Unauthorized` が返された場合（JWT 期限切れ等）。localStorage の token を削除してリダイレクト
+
+|`/orders/new`
+|`/orders`
+|`POST /api/orders` が `201 Created` を返した場合
+
+|`/orders/:id`
+|`/orders`
+|`DELETE /api/orders/:id` が `200 OK` を返した場合
+
+|===
+
+---
+
+== ルート保護の実装方針
+
+認証が必要なルートは React Router の `PrivateRoute` コンポーネントでラップする。
+
+[source,typescript]
+....
+// PrivateRoute コンポーネントのイメージ
+const PrivateRoute = ({ children }: { children: ReactNode }) => {
+  const token = localStorage.getItem("token");
+  // トークン未存在の場合はログイン画面にリダイレクトする
+  if (!token) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+};
+
+// ルーティング設定
+<Routes>
+  <Route path="/login" element={<LoginPage />} />
+  <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+  <Route path="/orders" element={<PrivateRoute><OrderListPage /></PrivateRoute>} />
+  <Route path="/orders/new" element={<PrivateRoute><OrderNewPage /></PrivateRoute>} />
+  <Route path="/orders/:id" element={<PrivateRoute><OrderDetailPage /></PrivateRoute>} />
+  <Route path="/customers" element={<PrivateRoute><CustomerListPage /></PrivateRoute>} />
+  <Route path="*" element={<NotFoundPage />} />
+</Routes>
+....

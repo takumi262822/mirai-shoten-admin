@@ -100,3 +100,65 @@ CI: `.github/workflows/ci.yml`
 
 - 対応する利用者向け画面: `../未来商店商材`
 - 他の独立作品とは非連携: `../godufo-game`, `../quiz-game`, `../脱出ゲーム`
+
+---
+
+# 【フルスタック版（React+Express+Supabase）セットアップ手順】
+
+## フォルダ構成
+
+```
+mirai-shoten-admin/
+├─ backend/    # バックエンドAPI（Node.js/Express/TypeScript）
+├─ frontend/   # フロントエンド（React/Vite/TypeScript）
+```
+
+## セットアップ手順
+
+1. 依存パッケージのインストール
+
+```powershell
+cd backend
+npm install
+cd ../frontend
+npm install
+```
+
+2. 環境変数ファイルの作成
+
+- backend/.env.example をコピーして backend/.env を作成し、SupabaseやJWTの値を設定
+- frontend/.env.example をコピーして frontend/.env を作成
+
+3. サーバーの起動
+
+**2つのターミナルを開き、下記をそれぞれ実行**
+
+- バックエンド
+  ```powershell
+  cd backend
+  npm run dev
+  ```
+- フロントエンド
+  ```powershell
+  cd frontend
+  npm run dev
+  ```
+
+4. ブラウザでアクセス
+
+- http://localhost:5173 で管理画面にアクセス
+
+## 環境変数サンプル（backend/.env）
+
+```
+SUPABASE_URL=（SupabaseのProject URL）
+SUPABASE_SERVICE_ROLE_KEY=sb_secret_...（Supabaseの秘密キー）
+JWT_SECRET=32文字以上のランダム文字列
+JWT_EXPIRES_IN=8h
+CORS_ORIGIN=http://localhost:5173
+PORT=3000
+```
+
+---
+
+（※旧バニラJS版の説明はこの下に残しています）

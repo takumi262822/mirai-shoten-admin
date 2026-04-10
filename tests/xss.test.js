@@ -1,10 +1,10 @@
 /**
  * XSSProtectionAdmin ユニットテスト
- * @file src/utils/xss.test.js
+ * @file tests/xss.test.js
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { XSSProtectionAdmin } from './xss.js';
+import { XSSProtectionAdmin } from '../src/utils/xss.js';
 
 // エスケープ処理がHTML記号を安全な実体参照へ変換できるかを確認する。
 test('HTML 記号を安全な実体参照へエスケープできること', () => {

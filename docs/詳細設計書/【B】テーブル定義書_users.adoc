@@ -1,0 +1,84 @@
+= テーブル定義書 — users
+:project: mirai-shoten-admin
+:author: Takumi Harada
+:revdate: 2026-04-10
+:doctype: article
+:toc:
+:toc-title: 目次
+:sectnums:
+
+== 変更履歴
+
+[cols="1,2,3,3,3,3", options="header", align="center"]
+|===
+^.^|No. ^.^|版数 ^.^|変更者 <.^|作成日/変更日 <.^|変更箇所 <.^|変更内容
+
+^.^|1 |1.00 |Takumi Harada |2026/4/10 <.^|- <.^|新規作成
+|===
+
+== テーブル基本情報
+
+[cols="2,5", options="header", align="center"]
+|===
+^.^|項目 ^.^|内容
+
+<.^|テーブル名（物理名） <.^|`users`
+<.^|テーブル名（論理名） <.^|管理者ユーザー
+<.^|データベース <.^|Supabase（PostgreSQL 15 互換）
+<.^|用途 <.^|管理画面にログインできる管理者アカウントを管理する
+|===
+
+== カラム定義
+
+[cols="1,3,3,3,2,1,4", options="header", align="center"]
+|===
+^.^|No. ^.^|カラム名（論理名） ^.^|カラム名（物理名） ^.^|型 ^.^|制約 ^.^|PK ^.^|備考
+
+^.^|1 <.^|ユーザーID <.^|`id` <.^|UUID <.^|PRIMARY KEY <.^|PK <.^|`gen_random_uuid()` で自動生成
+^.^|2 <.^|メールアドレス <.^|`email` <.^|VARCHAR(255) <.^|UNIQUE INDEX, NOT NULL <.^|- <.^|`lower(email)` でユニークインデックスを貼り、大文字小文字を区別しない
+^.^|3 <.^|パスワードハッシュ <.^|`password_hash` <.^|VARCHAR(255) <.^|NOT NULL <.^|- <.^|bcrypt (saltRounds=12) でハッシュ化。平文は保存しない
+^.^|4 <.^|氏名 <.^|`name` <.^|VARCHAR(100) <.^|- <.^|- <.^|管理者の表示名
+^.^|5 <.^|作成日時 <.^|`created_at` <.^|TIMESTAMPTZ <.^|NOT NULL <.^|- <.^|`DEFAULT NOW()`
+^.^|6 <.^|更新日時 <.^|`updated_at` <.^|TIMESTAMPTZ <.^|NOT NULL <.^|- <.^|`DEFAULT NOW()`。UPDATE トリガーで自動更新
+|===
+
+== バリデーション制約
+
+[cols="2,3,5", options="header", align="center"]
+|===
+^.^|カラム名 ^.^|制約種別 ^.^|内容
+
+<.^|`email` <.^|形式 <.^|RFC 準拠の正規表現でチェック。255 文字以内
+<.^|`password_hash` <.^|bcrypt 形式 <.^|`$2b$` で始まる 60 文字以上の文字列（登録時は平文を1〜72 文字で検証してからハッシュ化）
+|===
+
+== DDL
+
+[source,sql]
+----
+CREATE TABLE users (
+  id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  email         VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  name          VARCHAR(100),
+  created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- 大文字小文字を区別しないユニーク制約
+CREATE UNIQUE INDEX users_email_unique ON users (lower(email));
+----
+
+== データサンプル
+
+[source,json]
+----
+{
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "email": "admin@mirai-shoten.example.com",
+  "password_hash": "$2b$12$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "name": "管理者",
+  "created_at": "2026-04-10T09:00:00.000Z",
+  "updated_at": "2026-04-10T09:00:00.000Z"
+}
+----

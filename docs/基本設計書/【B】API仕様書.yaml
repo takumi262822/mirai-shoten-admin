@@ -1,117 +1,504 @@
 openapi: 3.0.3
 info:
-  title: 未来商店管理画面（mirai-shoten-admin）データ仕様
+  title: mirai-shoten-admin REST API 仕様書
   description: |-
-    MIRAI SHOTEN 管理画面はブラウザ上で動作する注文管理システムです。
-    外部 REST API は持たず、localStorage から未来商店（mirai-shoten）が書き込んだ
-    注文データを読み込んで管理します。
-    ステータス更新結果も同一の localStorage キーに書き戻します。
-  version: 1.0.0
+    注文管理システムのバックエンド REST API 仕様書。
+    Node.js + Express + TypeScript で実装し、Supabase（PostgreSQL）をデータソースとする。
+    すべての認証必須エンドポイントは Authorization ヘッダーに Bearer JWT を要求する。
+  version: 2.0.0
   contact:
     name: Takumi Harada
 
-servers: []
+servers:
+  - url: http://localhost:3000
+    description: ローカル開発環境
+  - url: https://your-api.onrender.com
+    description: 本番環境（Render）
 
-paths: {}
+security:
+  - bearerAuth: []
+
+paths:
+
+  # ===== 認証 =====
+
+  /api/auth/login:
+    post:
+      tags: [認証]
+      summary: ログイン
+      description: メールアドレスとパスワードで認証し、JWT を返す。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 認証成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/auth/logout:
+    post:
+      tags: [認証]
+      summary: ログアウト
+      description: サーバー側の処理は不要（JWT はステートレス）。フロントエンドで localStorage のトークンを削除する。
+      responses:
+        '200':
+          description: ログアウト成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: ログアウトしました
+
+  # ===== 注文 =====
+
+  /api/orders:
+    get:
+      tags: [注文]
+      summary: 注文一覧取得
+      description: 条件に合致する注文を一覧で返す。ステータスフィルターとページネーションに対応。
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+          description: ステータスで絞り込み。省略時は全件
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: ページ番号
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 1 ページあたりの件数
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [createdAt_desc, createdAt_asc]
+            default: createdAt_desc
+          description: 並び順
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [注文]
+      summary: 注文追加
+      description: 新規注文を登録する。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+      responses:
+        '201':
+          description: 登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/orders/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: 注文 ID
+
+    get:
+      tags: [注文]
+      summary: 注文詳細取得
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [注文]
+      summary: 注文更新
+      description: 指定した注文の情報を更新する。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    delete:
+      tags: [注文]
+      summary: 注文削除
+      responses:
+        '200':
+          description: 削除成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 削除しました
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===== 顧客 =====
+
+  /api/customers:
+    get:
+      tags: [顧客]
+      summary: 顧客一覧取得
+      description: 注文データをメールで集計した顧客情報を返す。
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  customers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CustomerSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ===== 統計 =====
+
+  /api/stats:
+    get:
+      tags: [統計]
+      summary: ダッシュボード統計取得
+      description: 総注文数・売上合計・ステータス別件数を返す。
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
 
-    OrderRecord:
+    LoginRequest:
       type: object
-      description: 注文1件分のデータ
-      required: [id, customerName, items, total, status, createdAt]
+      required: [email, password]
       properties:
-        id:
-          type: string
-          description: 注文ID（タイムスタンプベース）
-          example: "order-1711234567890"
-        customerName:
-          type: string
-          description: 注文者氏名
-        customerKana:
-          type: string
-          description: 注文者氏名（フリガナ）
         email:
           type: string
           format: email
-          description: メールアドレス
-        tel:
+          example: admin@example.com
+        password:
           type: string
-          description: 電話番号
-        zip:
-          type: string
-          description: 郵便番号
-          example: "123-4567"
-        address:
-          type: string
-          description: 住所
-        items:
-          type: array
-          description: 注文商品リスト
-          items:
-            $ref: '#/components/schemas/CartItem'
-        total:
-          type: integer
-          description: 合計金額（円）
-          minimum: 0
-        status:
-          type: string
-          description: 注文ステータス
-          enum: [pending, processing, shipped, delivered, cancelled]
-          default: pending
-        createdAt:
-          type: string
-          format: date-time
-          description: 注文日時（ISO 8601形式）
+          minLength: 8
+          example: P@ssw0rd123
 
-    CartItem:
+    LoginResponse:
       type: object
-      description: 注文内の商品1件分のデータ
-      required: [id, name, price, quantity]
+      properties:
+        token:
+          type: string
+          description: JWT アクセストークン
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    OrderStatus:
+      type: string
+      enum: [pending, processing, shipped, delivered, cancelled]
+      description: |
+        - pending: 受付中
+        - processing: 処理中
+        - shipped: 発送済み
+        - delivered: 配達完了
+        - cancelled: キャンセル
+
+    OrderItem:
+      type: object
+      required: [productCode, productName, quantity, unitPrice]
       properties:
         id:
           type: string
-          description: 商品ID
-        name:
+          format: uuid
+          readOnly: true
+        productCode:
           type: string
-          description: 商品名
-        price:
-          type: integer
-          description: 単価（円）
-          minimum: 0
+          example: MRS-001
+        productName:
+          type: string
+          example: ほっこり陶器マグ
         quantity:
           type: integer
-          description: 数量
           minimum: 1
           maximum: 999
+        unitPrice:
+          type: integer
+          minimum: 0
+          description: 単価（円）
 
-    OrderSummary:
+    OrderRecord:
       type: object
-      description: 集計結果データ（AdminManager.calcSummary の戻り値）
       properties:
-        totalCount:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        customerName:
+          type: string
+          maxLength: 100
+          example: 山田 太郎
+        customerKana:
+          type: string
+          maxLength: 100
+          example: ヤマダ タロウ
+        email:
+          type: string
+          format: email
+          example: yamada@example.com
+        tel:
+          type: string
+          example: 090-1234-5678
+        zip:
+          type: string
+          example: 123-4567
+        address:
+          type: string
+          example: 東京都渋谷区○○1-2-3
+        totalPrice:
+          type: integer
+          minimum: 0
+          description: 合計金額（円）
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+
+    OrderCreateRequest:
+      type: object
+      required: [customerName, email, totalPrice, status, items]
+      properties:
+        customerName:
+          type: string
+          maxLength: 100
+        customerKana:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        tel:
+          type: string
+        zip:
+          type: string
+        address:
+          type: string
+        totalPrice:
+          type: integer
+          minimum: 0
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/OrderItem'
+
+    OrderUpdateRequest:
+      type: object
+      properties:
+        customerName:
+          type: string
+          maxLength: 100
+        customerKana:
+          type: string
+        email:
+          type: string
+          format: email
+        tel:
+          type: string
+        zip:
+          type: string
+        address:
+          type: string
+        totalPrice:
+          type: integer
+          minimum: 0
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+
+    OrderListResponse:
+      type: object
+      properties:
+        orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderRecord'
+        total:
+          type: integer
+          description: フィルター後の全件数
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    CustomerSummary:
+      type: object
+      properties:
+        customerName:
+          type: string
+        email:
+          type: string
+          format: email
+        orderCount:
+          type: integer
+          description: 注文回数
+        totalSpent:
+          type: integer
+          description: 累計購入金額（円）
+
+    StatsResponse:
+      type: object
+      properties:
+        totalOrders:
           type: integer
           description: 総注文件数
-        totalAmount:
+        totalRevenue:
           type: integer
-          description: 総合計金額（円）
+          description: 売上合計（円）
         byStatus:
           type: object
-          description: ステータス別件数
-          additionalProperties:
-            type: integer
-          example:
-            pending: 3
-            processing: 1
-            shipped: 2
-            delivered: 5
-            cancelled: 0
+          properties:
+            pending:
+              type: integer
+            processing:
+              type: integer
+            shipped:
+              type: integer
+            delivered:
+              type: integer
+            cancelled:
+              type: integer
 
-x-storage-keys:
-  adminOrders:
-    description: "注文履歴を保持する localStorage キー（mirai-shoten と共有）"
-    type: "JSON文字列（OrderRecord[]）"
-    read-by: "src/core/admin-manager.js"
-    write-by: "src/core/admin-manager.js（ステータス更新時）, mirai-shoten の購入完了処理"
-    backward-compat: "旧形式（items が未定義の場合など）はロード時に正規化して処理する"
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: リクエストが不正です
+
+  responses:
+    Unauthorized:
+      description: 認証エラー（JWT 未送信・無効・期限切れ）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: 認証が必要です
+
+    NotFound:
+      description: 指定されたリソースが存在しない
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: 注文が見つかりません
+
+    ValidationError:
+      description: バリデーションエラー
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    field:
+                      type: string
+                    message:
+                      type: string
+

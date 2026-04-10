@@ -1,0 +1,211 @@
+= ER図（エンティティ関連図）
+:project: mirai-shoten-admin
+:author: Takumi Harada
+:revdate: 2026-04-10
+:doctype: article
+:toc:
+:toc-title: 目次
+:sectnums:
+
+== 変更履歴
+
+[cols="1,2,3,3,3,3", options="header", align="center"]
+|===
+^.^|No. ^.^|版数 ^.^|変更者 <.^|作成日/変更日 <.^|変更箇所 <.^|変更内容
+
+^.^|1 |1.00 |Takumi Harada |2026/4/10 <.^|- <.^|新規作成（Supabase / PostgreSQL 版）
+|===
+
+== 概要
+
+本書はプロジェクト「{project}」のデータベース構造を ER 図で表した設計書です。
+Supabase（PostgreSQL 15 互換）を使用します。
+
+---
+
+== ER 図
+
+[source,mermaid]
+....
+erDiagram
+  users {
+    uuid    id          PK
+    varchar email       UK "NOT NULL"
+    varchar password_hash   "NOT NULL"
+    varchar name
+    timestamptz created_at   "DEFAULT NOW()"
+    timestamptz updated_at   "DEFAULT NOW()"
+  }
+
+  orders {
+    uuid    id           PK
+    varchar customer_name  "NOT NULL"
+    varchar customer_kana
+    varchar email          "NOT NULL"
+    varchar tel
+    varchar zip
+    text    address
+    integer total_price    "NOT NULL DEFAULT 0"
+    varchar status         "NOT NULL DEFAULT 'pending'"
+    timestamptz created_at  "DEFAULT NOW()"
+    timestamptz updated_at  "DEFAULT NOW()"
+  }
+
+  order_items {
+    uuid    id           PK
+    uuid    order_id     FK "NOT NULL"
+    varchar product_code  "NOT NULL"
+    varchar product_name  "NOT NULL"
+    integer quantity      "NOT NULL DEFAULT 1"
+    integer unit_price    "NOT NULL DEFAULT 0"
+  }
+
+  orders ||--o{ order_items : "1件の注文は複数の明細を持つ"
+....
+
+---
+
+== テーブル一覧
+
+[cols="2,5", options="header"]
+|===
+|テーブル名 |説明
+
+|`users`
+|管理者ユーザー。ログイン認証に使用する。初期データはシード SQL で投入する。
+
+|`orders`
+|顧客からの注文1件分のヘッダー情報（顧客情報・合計金額・ステータス）。
+
+|`order_items`
+|注文に含まれる商品の明細。`orders` テーブルと外部キーで紐づく。
+
+|===
+
+---
+
+== リレーション
+
+[cols="2,1,3,5", options="header"]
+|===
+|親テーブル |関係 |子テーブル |説明
+
+|`orders`
+|1 対 多
+|`order_items`
+|1件の注文は1件以上の注文明細を持つ。注文削除時に明細も CASCADE 削除する。
+
+|===
+
+---
+
+== 主要な制約
+
+[cols="2,2,5", options="header"]
+|===
+|テーブル |カラム |制約・備考
+
+|`users`
+|`email`
+|UNIQUE 制約。大文字小文字を区別しない（`lower(email)` でユニークインデックスを貼る）
+
+|`orders`
+|`status`
+|CHECK 制約: `status IN ('pending', 'processing', 'shipped', 'delivered', 'cancelled')`
+
+|`orders`
+|`total_price`
+|CHECK 制約: `total_price >= 0`
+
+|`order_items`
+|`order_id`
+|外部キー制約: `REFERENCES orders(id) ON DELETE CASCADE`
+
+|`order_items`
+|`quantity`
+|CHECK 制約: `quantity >= 1 AND quantity <= 999`
+
+|`order_items`
+|`unit_price`
+|CHECK 制約: `unit_price >= 0`
+
+|===
+
+---
+
+== DDL（テーブル作成 SQL）
+
+[source,sql]
+....
+-- 管理者ユーザーテーブル
+CREATE TABLE users (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email         VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  name          VARCHAR(100),
+  created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- メールアドレスの一意制約（大文字小文字を区別しない）
+CREATE UNIQUE INDEX users_email_unique ON users (lower(email));
+
+-- 注文テーブル
+CREATE TABLE orders (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_name VARCHAR(100) NOT NULL,
+  customer_kana VARCHAR(100),
+  email         VARCHAR(255) NOT NULL,
+  tel           VARCHAR(20),
+  zip           VARCHAR(10),
+  address       TEXT,
+  total_price   INTEGER      NOT NULL DEFAULT 0 CHECK (total_price >= 0),
+  status        VARCHAR(20)  NOT NULL DEFAULT 'pending'
+                  CHECK (status IN ('pending', 'processing', 'shipped', 'delivered', 'cancelled')),
+  created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- 注文明細テーブル
+CREATE TABLE order_items (
+  id           UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id     UUID    NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  product_code VARCHAR(50)  NOT NULL,
+  product_name VARCHAR(200) NOT NULL,
+  quantity     INTEGER NOT NULL DEFAULT 1 CHECK (quantity >= 1 AND quantity <= 999),
+  unit_price   INTEGER NOT NULL DEFAULT 0 CHECK (unit_price >= 0)
+);
+
+-- updated_at を自動更新するトリガー
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER orders_updated_at
+  BEFORE UPDATE ON orders
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER users_updated_at
+  BEFORE UPDATE ON users
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+....
+
+---
+
+== 初期データ（シード SQL）
+
+[source,sql]
+....
+-- 管理者アカウント（開発用）
+-- パスワード: Admin1234! を bcrypt(saltRounds=12) でハッシュ化した値
+INSERT INTO users (email, password_hash, name)
+VALUES (
+  'admin@mirai-shoten.example.com',
+  '$2b$12$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  '管理者'
+);
+....
