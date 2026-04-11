@@ -14,7 +14,7 @@ export function useOrder(id: string | undefined) {
     setLoading(true);
     setError(null);
 
-    apiFetch<Order>(`/api/orders/${id}`)
+    apiFetch<Order>(`/orders/${id}`)
       .then(setOrder)
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));

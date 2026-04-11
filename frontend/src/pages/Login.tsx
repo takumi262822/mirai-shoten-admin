@@ -1,5 +1,7 @@
-import { useState, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+// 本番環境のVITE_API_URLを自動でconsole出力（デバッグ用）
+console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
+import { useState, FormEvent, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
 import { saveToken } from '../utils/auth';
 import { validateLoginForm } from '../utils/validator';
@@ -7,6 +9,17 @@ import { validateLoginForm } from '../utils/validator';
 /** ログイン画面 */
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+    // パスワードリセット用トークンがURLハッシュに含まれていたら自動遷移
+    useEffect(() => {
+      if (location.hash) {
+        const hash = location.hash.replace('#', '');
+        const params = new URLSearchParams(hash);
+        if (params.get('type') === 'recovery' && params.get('access_token')) {
+          navigate(`/reset-password${location.hash}`, { replace: true });
+        }
+      }
+    }, [location, navigate]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -26,7 +39,7 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const res = await apiFetch<{ token: string }>('/api/auth/login', {
+      const res = await apiFetch<{ token: string }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });

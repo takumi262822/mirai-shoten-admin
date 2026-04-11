@@ -67,7 +67,7 @@ export default function OrderNew() {
 
     setSaving(true);
     try {
-      await apiFetch('/api/orders', {
+      await apiFetch('/orders', {
         method: 'POST',
         body: JSON.stringify({
           customer_name: form.customer_name,

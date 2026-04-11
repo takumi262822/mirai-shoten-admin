@@ -26,7 +26,7 @@ export function useOrders(options: UseOrdersOptions = {}) {
       });
       if (status) params.set('status', status);
 
-      const result = await apiFetch<OrderListResponse>(`/api/orders?${params}`);
+      const result = await apiFetch<OrderListResponse>(`/orders?${params}`);
       setData(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'データの取得に失敗しました');

@@ -9,7 +9,7 @@ export function useCustomers() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiFetch<{ customers: CustomerSummary[] }>('/api/customers')
+    apiFetch<{ customers: CustomerSummary[] }>('/customers')
       .then(res => setCustomers(res.customers))
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));

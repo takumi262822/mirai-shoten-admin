@@ -23,7 +23,7 @@ export default function OrderDetail() {
     setSaving(true);
     setSaveError('');
     try {
-      await apiFetch(`/api/orders/${id}`, {
+      await apiFetch(`/orders/${id}`, {
         method: 'PUT',
         body: JSON.stringify({ status: editStatus }),
       });
@@ -39,7 +39,7 @@ export default function OrderDetail() {
     if (!id || !window.confirm('この注文を削除しますか？')) return;
     setDeleting(true);
     try {
-      await apiFetch(`/api/orders/${id}`, { method: 'DELETE' });
+      await apiFetch(`/orders/${id}`, { method: 'DELETE' });
       navigate('/orders');
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : '削除に失敗しました');

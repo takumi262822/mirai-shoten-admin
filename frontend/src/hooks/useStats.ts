@@ -9,7 +9,7 @@ export function useStats() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiFetch<Stats>('/api/stats')
+    apiFetch<Stats>('/stats')
       .then(setStats)
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
