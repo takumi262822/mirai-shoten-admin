@@ -16,9 +16,10 @@ const PORT = parseInt(process.env.PORT ?? '3000', 10);
 app.use(cors({
   origin: (origin, callback) => {
     const allowed = (process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5173']);
-    if (allowed.includes(origin)) return callback(null, true);
+    const reqOrigin = origin ?? '';
+    if (allowed.includes(reqOrigin)) return callback(null, true);
     // ワイルドカード対応
-    if (allowed.some(o => o.includes('*') && new RegExp('^' + o.replace('.', '\.').replace('*', '.*') + '$').test(origin))) {
+    if (allowed.some(o => o.includes('*') && new RegExp('^' + (o ?? '').replace('.', '\.').replace('*', '.*') + '$').test(reqOrigin))) {
       return callback(null, true);
     }
     callback(new Error('Not allowed by CORS'));
