@@ -1,5 +1,3 @@
-// 本番環境のVITE_API_URLを自動でconsole出力（デバッグ用）
-console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
 import { useState, FormEvent, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
