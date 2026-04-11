@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/api';
-import { Stats } from '../types';
+import { Stats } from '../types/index';
 
 /** ダッシュボード統計を取得するカスタムフック */
 export function useStats() {

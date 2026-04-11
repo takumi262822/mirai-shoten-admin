@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../utils/api';
-import { OrderListResponse, OrderStatus } from '../types';
+import { OrderListResponse, OrderStatus } from '../types/index';
 
 interface UseOrdersOptions {
   status?: OrderStatus;

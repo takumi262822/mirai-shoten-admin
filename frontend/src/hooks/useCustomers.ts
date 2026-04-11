@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/api';
-import { CustomerSummary } from '../types';
+import { CustomerSummary } from '../types/index';
 
 /** 顧客一覧を取得するカスタムフック */
 export function useCustomers() {

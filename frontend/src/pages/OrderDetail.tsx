@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useOrder } from '../hooks/useOrder';
 import { StatusBadge } from '../components/StatusBadge';
 import { apiFetch } from '../utils/api';
-import { OrderStatus, STATUS_LABELS } from '../types/index';
+import { OrderStatus, STATUS_LABELS } from '../types';
 
 const STATUSES = Object.entries(STATUS_LABELS) as [OrderStatus, string][];
 
@@ -119,7 +119,7 @@ export default function OrderDetail() {
               </tr>
             </thead>
             <tbody>
-              {order.order_items.map(item => (
+              {order.order_items.map((item: any, i: number) => (
                 <tr key={item.id}>
                   <td>{item.product_code}</td>
                   <td>{item.product_name}</td>

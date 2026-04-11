@@ -72,7 +72,7 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {orders.map(order => (
+              {orders.map((order: any) => (
                 <tr key={order.id}>
                   <td>
                     <Link to={`/orders/${order.id}`} className="table-link">

@@ -70,7 +70,7 @@ export default function Orders() {
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order: any, i: number) => (
+                {orders.map((order: any) => (
                   <tr key={order.id}>
                     <td>{order.customer_name}</td>
                     <td>{order.email}</td>

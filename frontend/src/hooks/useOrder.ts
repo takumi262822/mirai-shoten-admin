@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/api';
-import { Order } from '../types';
+import { Order } from '../types/index';
 
 /** 注文詳細を取得するカスタムフック */
 export function useOrder(id: string | undefined) {
