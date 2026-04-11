@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useOrder } from '../hooks/useOrder';
 import { StatusBadge } from '../components/StatusBadge';
 import { apiFetch } from '../utils/api';
-import { OrderStatus, STATUS_LABELS } from '../types';
+import { OrderStatus, STATUS_LABELS } from '../types/index';
 
 const STATUSES = Object.entries(STATUS_LABELS) as [OrderStatus, string][];
 

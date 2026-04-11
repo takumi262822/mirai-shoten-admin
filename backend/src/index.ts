@@ -21,21 +21,27 @@ app.use(cors({
 app.use(express.json());
 
 // ルーター登録
+
 app.use('/api/auth', authRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/customers', customersRouter);
 app.use('/api/stats', statsRouter);
 
 // ヘルスチェック
-app.get('/health', (_req, res) => {
+app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
 // 集中エラーハンドラー（最後に登録）
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`サーバー起動: http://localhost:${PORT}`);
-});
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`サーバー起動: http://localhost:${PORT}`);
+  });
+}
+
+export default app;
 
 export default app;

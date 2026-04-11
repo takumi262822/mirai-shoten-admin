@@ -1,4 +1,4 @@
-import { OrderFormData, OrderStatus } from '../types';
+import { OrderFormData, OrderStatus, OrderItemFormData } from '../types/index';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const VALID_STATUSES: OrderStatus[] = [
@@ -37,7 +37,7 @@ export function validateOrderForm(data: OrderFormData): ValidationErrors {
     errors.status = '無効なステータスです';
   }
 
-  data.items.forEach((item, i) => {
+  data.items.forEach((item: OrderItemFormData, i: number) => {
     if (!item.product_name.trim()) {
       errors[`items.${i}.product_name`] = '商品名は必須です';
     }
@@ -50,6 +50,8 @@ export function validateOrderForm(data: OrderFormData): ValidationErrors {
       errors[`items.${i}.unit_price`] = '単価は0以上の数値を入力してください';
     }
   });
+  // 型明示
+  // data.items.forEach((item: OrderItemFormData, i: number) => {...})
 
   return errors;
 }

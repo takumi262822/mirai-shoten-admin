@@ -2,7 +2,7 @@ import { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
 import { validateOrderForm } from '../utils/validator';
-import { OrderFormData, OrderItemFormData, OrderStatus } from '../types';
+import { OrderFormData, OrderItemFormData, OrderStatus } from '../types/index';
 
 const EMPTY_ITEM: OrderItemFormData = {
   product_code: '',
@@ -50,7 +50,7 @@ export default function OrderNew() {
   function removeItem(index: number) {
     setForm(prev => ({
       ...prev,
-      items: prev.items.filter((_, i) => i !== index),
+      items: prev.items.filter((_: OrderItemFormData, i: number) => i !== index),
     }));
   }
 
@@ -78,7 +78,7 @@ export default function OrderNew() {
           address: form.address,
           total_price: Number(form.total_price),
           status: form.status as OrderStatus,
-          items: form.items.map(item => ({
+          items: form.items.map((item: OrderItemFormData) => ({
             product_code: item.product_code,
             product_name: item.product_name,
             quantity: Number(item.quantity),

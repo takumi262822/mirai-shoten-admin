@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useOrders } from '../hooks/useOrders';
 import { StatusBadge } from '../components/StatusBadge';
 import { Pagination } from '../components/Pagination';
-import { OrderStatus } from '../types';
+import { OrderStatus } from '../types/index';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: 'すべて' },
@@ -70,7 +70,7 @@ export default function Orders() {
                 </tr>
               </thead>
               <tbody>
-                {orders.map(order => (
+                {orders.map((order: any, i: number) => (
                   <tr key={order.id}>
                     <td>{order.customer_name}</td>
                     <td>{order.email}</td>

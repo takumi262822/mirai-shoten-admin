@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: mirai-shoten-backend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+    autoDeploy: true
+    branch: main
+    rootDir: .
+    region: oregon
+    healthCheckPath: /api/health
