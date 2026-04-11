@@ -14,7 +14,7 @@ const PORT = parseInt(process.env.PORT ?? '3000', 10);
 
 // ミドルウェア設定
 app.use(cors({
-  origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+  origin: (process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5173']),
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
