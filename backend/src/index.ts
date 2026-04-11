@@ -14,7 +14,15 @@ const PORT = parseInt(process.env.PORT ?? '3000', 10);
 
 // ミドルウェア設定
 app.use(cors({
-  origin: (process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5173']),
+  origin: (origin, callback) => {
+    const allowed = (process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5173']);
+    if (allowed.includes(origin)) return callback(null, true);
+    // ワイルドカード対応
+    if (allowed.some(o => o.includes('*') && new RegExp('^' + o.replace('.', '\.').replace('*', '.*') + '$').test(origin))) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
