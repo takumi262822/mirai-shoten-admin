@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "nodemon --watch src --ext ts --exec ts-node -r tsconfig-paths/register src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "test": "echo '（現状は自動テスト未実装。必要に応じて追加）'"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",

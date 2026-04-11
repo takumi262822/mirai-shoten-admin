@@ -30,10 +30,7 @@ export default function ResetPassword() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
-    const { error } = await supabase.auth.updateUser(
-      { password },
-      { accessToken: token }
-    );
+    const { error } = await supabase.auth.updateUser({ password });
     if (error) {
       setMessage('パスワード再設定に失敗しました: ' + error.message);
     } else {

@@ -14,6 +14,7 @@
 ^.^|No. ^.^|版数 ^.^|変更者 <.^|作成日/変更日 <.^|変更箇所 <.^|変更内容
 
 ^.^|1 |1.00 |Takumi Harada |2026/4/10 <.^|- <.^|新規作成
+^.^|2 |1.01 |GitHub Copilot |2026/4/12 <.^|運用履歴・セキュリティ <.^|2026/4/11 ログイン動作確認済み。管理者アカウントadmin@mirai-shoten.comで本番運用開始。パスワード直接書き換え禁止・JWT_SECRET管理・CORS現状を追記
 |===
 
 == 概要
@@ -233,13 +234,18 @@ export default function App() {
 |bcrypt の計算コストに加え、Express レートリミット（express-rate-limit）を /api/auth/login に適用する。
 
 |JWT 秘密鍵漏洩
-|`JWT_SECRET` は環境変数で管理。Render のシークレット管理機能を利用。32 文字以上のランダム文字列を使用する。
+|`JWT_SECRET` はVercelの環境変数管理機能で管理。32文字以上のランダム文字列を使用する。
 
 |XSS によるトークン窃取
 |フロントエンドで入力値を DOMPurify でサニタイズ。API レスポンスを innerHTML に直接埋め込まない。
 
 |CORS
-|Express の `cors` ミドルウェアで `CORS_ORIGIN`（Vercel の URL）のみ許可。
+|Express の `cors` ミドルウェアで `CORS_ORIGIN`（Vercel のURL: https://mirai-shoten-admin.vercel.app など）を許可。複数オリジン許可も可能。設定変更時は必ず再デプロイ。
+---
+
+== パスワード管理に関する注意
+
+Supabaseのauth.usersテーブルの`encrypted_password`カラムを直接SQLで書き換えても、GoTrue認証サービスには反映されません。必ずSupabase管理画面の「Send password recovery」や公式API経由でパスワードリセットを行うこと。直接書き換えはログイン不能や不整合の原因となるため禁止とする。
 
 |SQL インジェクション
 |Supabase クライアントのプリペアドステートメントを使用。生 SQL は `$1, $2` プレースホルダーを使う。
