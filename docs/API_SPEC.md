@@ -36,4 +36,5 @@
 
 ## 認証
 - JWT（JSON Web Token）による認証
+- 認証が必要なエンドポイントには、リクエストヘッダー `Authorization: Bearer <JWT>` を付与してください。
 - Supabaseサービスロールキーはバックエンドの環境変数で管理
