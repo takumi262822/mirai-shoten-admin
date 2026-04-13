@@ -21,7 +21,7 @@ app.use(express.static('public'));
 // CORSはAPIリクエストのみ適用し、ルートやfaviconはスキップ
 app.use((req, res, next) => {
   // 静的ファイルやAPI以外のリクエストはCORSをスキップ
-  const skipCORS = (path) =>
+  const skipCORS = (path: string) =>
     path === '/' ||
     /^\/(favicon\.(ico|png|jpg|svg)?|index\.html|robots\.txt|static\/.*)?$/.test(path) ||
     !path.startsWith('/api/');
