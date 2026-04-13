@@ -1,9 +1,11 @@
+import express from 'express';
+import path from 'path';
+// ...既存のコード...
+
 // ルート（/）でindex.htmlを返す（静的サーブの補完）
 app.get('/', (_req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
-import express from 'express';
-import path from 'path';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { errorHandler } from './middleware/errorHandler';
