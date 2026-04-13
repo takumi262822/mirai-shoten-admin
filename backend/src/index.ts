@@ -1,3 +1,11 @@
+// ルート・faviconはCORS前に明示レスポンス
+app.get('/', (_req, res) => {
+  res.status(200).send('mirai-shoten-admin-backend APIサーバー\nこのURLはAPIサーバー単体のルートです。/api/以下でAPIを利用してください。');
+});
+app.get('/favicon.ico', (_req, res) => res.status(204).end());
+app.get('/favicon.png', (_req, res) => res.status(204).end());
+// ...existing code...
+// ...existing code...
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -14,26 +22,19 @@ dotenv.config();
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '3000', 10);
 
+
+// ...existing code...
+
 // ミドルウェア設定
-if (process.env.NODE_ENV === 'test') {
-  // テスト時はCORS全許可
-  app.use(cors());
-} else {
-  app.use(cors({
-    origin: (origin, callback) => {
-      const allowed = (process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5173']);
-      const reqOrigin = origin ?? '';
-      if (allowed.includes(reqOrigin)) return callback(null, true);
-      // ワイルドカード対応
-      if (allowed.some(o => o.includes('*') && new RegExp('^' + (o ?? '').replace('.', '\\.').replace('*', '.*') + '$').test(reqOrigin))) {
-        return callback(null, true);
-      }
-      callback(new Error('Not allowed by CORS'));
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  }));
-}
+// ミドルウェア設定
+// CORS全許可（緊急対応）
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['*'],
+  exposedHeaders: ['*'],
+  credentials: true,
+}));
 app.use(express.json());
 
 // ルーター登録
