@@ -48,6 +48,8 @@ app.use((req, res, next) => {
       if (wildcardPatterns.some(re => re.test(reqOrigin))) {
         return callback(null, true);
       }
+      // デバッグ用: 拒否時にOriginとallowedリストを出力
+      console.warn('[CORS拒否] reqOrigin:', reqOrigin, '\nallowed:', allowed, '\npatterns:', wildcardPatterns.map(r=>r.toString()));
       callback(new Error('Not allowed by CORS'));
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
