@@ -1,14 +1,8 @@
+
 import express from 'express';
 import path from 'path';
 import cors from 'cors';
 import dotenv from 'dotenv';
-const app = express();
-const PORT = parseInt(process.env.PORT ?? '3000', 10);
-
-// ルート（/）でindex.htmlを返す（静的サーブの補完）
-app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
-});
 import { errorHandler } from './middleware/errorHandler';
 import authRouter from './routes/auth';
 import ordersRouter from './routes/orders';
@@ -19,6 +13,11 @@ dotenv.config();
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '3000', 10);
+
+// ルート（/）でindex.htmlを返す（静的サーブの補完）
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
 
 
 
