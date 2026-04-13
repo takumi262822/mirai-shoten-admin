@@ -1,4 +1,9 @@
+// ルート（/）でindex.htmlを返す（静的サーブの補完）
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
 import express from 'express';
+import path from 'path';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { errorHandler } from './middleware/errorHandler';
@@ -15,7 +20,7 @@ const PORT = parseInt(process.env.PORT ?? '3000', 10);
 
 
 // 静的ファイル（index.html, favicon.ico等）をCORSより前にサーブ
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, '../public')));
 
 
 // CORSはAPIリクエストのみ適用し、ルートやfaviconはスキップ
