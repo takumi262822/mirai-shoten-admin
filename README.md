@@ -40,7 +40,7 @@ set NODE_ENV=test; npm test   # Jest+Supertest
 
 ## 3. 本番・デモ環境とテスト用アカウント
 - フロント: https://mirai-shoten-admin.vercel.app
-- バックエンド: https://mirai-shoten-admin-backend.vercel.app
+- バックエンド: https://mirai-shoten-admin-backend-git-main-takumis-projects-528009ae.vercel.app
 - 管理者ID: `admin@mirai-shoten.com` / パスワード: `Admin1234!`
 
 ---
