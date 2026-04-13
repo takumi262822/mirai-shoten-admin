@@ -55,11 +55,7 @@ app.get('/api/health', (_req, res) => {
 app.use(errorHandler);
 
 
-if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`サーバー起動: http://localhost:${PORT}`);
-  });
-}
+
 
 
 export default app;
