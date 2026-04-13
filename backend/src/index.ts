@@ -32,10 +32,10 @@ app.use((req, res, next) => {
     origin: (origin, callback) => {
       const allowed = (process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5173']);
       const reqOrigin = origin ?? '';
-      // Originが空(undefined)の場合は一時的に許可し、必ずデバッグ出力
+      // Originが空(undefined)の場合は許可しない（本番用）
       if (!reqOrigin) {
-        console.warn('[CORS緩和: origin空]', { reqOrigin, allowed });
-        return callback(null, true);
+        console.warn('[CORS拒否: origin空]', { reqOrigin, allowed });
+        return callback(new Error('Not allowed by CORS'));
       }
       // 完全一致
       if (allowed.includes(reqOrigin)) return callback(null, true);
