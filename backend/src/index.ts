@@ -1,9 +1,3 @@
-// ルート・faviconはCORS前に明示レスポンス
-app.get('/', (_req, res) => {
-  res.status(200).send('mirai-shoten-admin-backend APIサーバー\nこのURLはAPIサーバー単体のルートです。/api/以下でAPIを利用してください。');
-});
-app.get('/favicon.ico', (_req, res) => res.status(204).end());
-app.get('/favicon.png', (_req, res) => res.status(204).end());
 // ...existing code...
 // ...existing code...
 import express from 'express';
@@ -37,9 +31,15 @@ app.use(cors({
 }));
 app.use(express.json());
 
+
+// ルート・faviconはCORS後に明示レスポンス
+app.get('/', (_req, res) => {
+  res.status(200).send('mirai-shoten-admin-backend APIサーバー\nこのURLはAPIサーバー単体のルートです。/api/以下でAPIを利用してください。');
+});
+app.get('/favicon.ico', (_req, res) => res.status(204).end());
+app.get('/favicon.png', (_req, res) => res.status(204).end());
+
 // ルーター登録
-
-
 app.use('/api/auth', authRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/customers', customersRouter);
